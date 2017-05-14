@@ -36,4 +36,12 @@
         android:clipChildren="false"
         android:paddingEnd="@dimen/battery_level_padding_start"
         systemui:textAppearance="@style/TextAppearance.StatusBar.Clock" />
+
+    <com.android.systemui.statusbar.logo.LogoImageViewRight
+        android:id="@+id/derp_logo_right"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingStart="3dp"
+        android:scaleType="center"
+        android:visibility="gone" />
 </LinearLayout>
