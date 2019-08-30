@@ -126,4 +126,7 @@
     <!-- Toast animation -->
     <java-symbol type="style" name="Animation.Toast.Material" />
 
+    <!-- Whether to send camera status intent -->
+    <java-symbol type="bool" name="config_sendCameraStatusIntent" />
+
 </resources>
