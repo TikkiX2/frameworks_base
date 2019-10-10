@@ -96,4 +96,7 @@
     <java-symbol type="bool" name="config_has_Soli" />
 
     <java-symbol type="bool" name="config_has_weird_dt_sensor" />
+
+    <!-- Ambiant Pulse Light -->
+    <java-symbol type="integer" name="config_AmbiantPulseLightColor" />
 </resources>
