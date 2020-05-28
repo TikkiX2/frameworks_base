@@ -48,6 +48,7 @@ import com.android.systemui.R;
 import com.android.systemui.Interpolators;
 import com.android.systemui.omni.CurrentWeatherView;
 import com.android.systemui.statusbar.policy.ConfigurationController;
+import com.android.systemui.tuner.TunerService;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -55,7 +56,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class KeyguardStatusView extends GridLayout implements
-        ConfigurationController.ConfigurationListener {
+        ConfigurationController.ConfigurationListener, TunerService.Tunable {
     private static final boolean DEBUG = KeyguardConstants.DEBUG;
     private static final String TAG = "KeyguardStatusView";
     private static final int MARQUEE_DELAY_MS = 2000;
@@ -76,6 +77,11 @@ public class KeyguardStatusView extends GridLayout implements
     private float mDarkAmount = 0;
     private int mTextColor;
 
+    private static final String LOCKSCREEN_WEATHER_ENABLED =
+            "system:" + Settings.System.OMNI_LOCKSCREEN_WEATHER_ENABLED;
+    private static final String LOCKSCREEN_WEATHER_STYLE =
+            "system:" + Settings.System.AICP_LOCKSCREEN_WEATHER_STYLE;
+
     /**
      * Bottom margin that defines the margin between bottom of smart space and top of notification
      * icons on AOD.
@@ -87,6 +93,7 @@ public class KeyguardStatusView extends GridLayout implements
     private float mWidgetPadding;
     private int mLastLayoutHeight;
     private CurrentWeatherView mWeatherView;
+    private boolean mShowWeather;
     private boolean mOmniStyle;
 
     private KeyguardUpdateMonitorCallback mInfoCallback = new KeyguardUpdateMonitorCallback() {
@@ -111,7 +118,7 @@ public class KeyguardStatusView extends GridLayout implements
                 updateOwnerInfo();
                 updateLogoutView();
                 refreshLockDateFont();
-                updateSettings();
+                updateWeatherView();
             }
         }
 
@@ -131,6 +138,7 @@ public class KeyguardStatusView extends GridLayout implements
             updateOwnerInfo();
             updateLogoutView();
             refreshLockDateFont();
+            updateWeatherView();
         }
 
         @Override
@@ -152,6 +160,9 @@ public class KeyguardStatusView extends GridLayout implements
         mIActivityManager = ActivityManager.getService();
         mLockPatternUtils = new LockPatternUtils(getContext());
         mHandler = new Handler();
+        final TunerService tunerService = Dependency.get(TunerService.class);
+        tunerService.addTunable(this, LOCKSCREEN_WEATHER_ENABLED,
+                                      LOCKSCREEN_WEATHER_STYLE);
         onDensityOrFontScaleChanged();
     }
 
@@ -214,12 +225,7 @@ public class KeyguardStatusView extends GridLayout implements
         mKeyguardSlice = findViewById(R.id.keyguard_status_area);
 
         mWeatherView = (CurrentWeatherView) findViewById(R.id.weather_container);
-
         mTextColor = mClockView.getCurrentTextColor();
-
-        refreshLockDateFont();
-        mKeyguardSlice.setContentChangeListener(this::onSliceContentChanged);
-        onSliceContentChanged();
 
         boolean shouldMarquee = Dependency.get(KeyguardUpdateMonitor.class).isDeviceInteractive();
         setEnableMarquee(shouldMarquee);
@@ -227,7 +233,11 @@ public class KeyguardStatusView extends GridLayout implements
         updateOwnerInfo();
         updateLogoutView();
         updateDark();
+        refreshLockDateFont();
+        updateWeatherView();
 
+        mKeyguardSlice.setContentChangeListener(this::onSliceContentChanged);
+        onSliceContentChanged();
     }
 
     public KeyguardSliceView getKeyguardSliceView() {
@@ -287,6 +297,7 @@ public class KeyguardStatusView extends GridLayout implements
 
     private void refreshTime() {
         mClockView.refresh();
+        refreshLockDateFont();
     }
 
     private void updateTimeZone(TimeZone timeZone) {
@@ -719,23 +730,30 @@ public class KeyguardStatusView extends GridLayout implements
         }
     }
 
-    private void updateSettings() {
-        final ContentResolver resolver = getContext().getContentResolver();
-        final Resources res = getContext().getResources();
-        boolean showWeather = Settings.System.getIntForUser(resolver,
-                Settings.System.OMNI_LOCKSCREEN_WEATHER_ENABLED, 0,
-                UserHandle.USER_CURRENT) == 1;
+    @Override
+    public void onTuningChanged(String key, String newValue) {
+        switch (key) {
+            case LOCKSCREEN_WEATHER_ENABLED:
+                mShowWeather =
+                        TunerService.parseIntegerSwitch(newValue, false);
+                updateWeatherView();
+                break;
+            case LOCKSCREEN_WEATHER_STYLE:
+                mOmniStyle =
+                        !TunerService.parseIntegerSwitch(newValue, false);
+                updateWeatherView();
+                break;
+            default:
+                break;
+        }
+    }
 
-        mOmniStyle = Settings.System.getIntForUser(resolver,
-                Settings.System.AICP_LOCKSCREEN_WEATHER_STYLE, 0,
-                UserHandle.USER_CURRENT) == 0;
-
+    public void updateWeatherView() {
         if (mWeatherView != null) {
-            if (showWeather &&  mOmniStyle) {
+            if (mShowWeather && mOmniStyle && mKeyguardSlice.getVisibility() == View.VISIBLE) {
                 mWeatherView.setVisibility(View.VISIBLE);
                 mWeatherView.enableUpdates();
-            }
-            if (!showWeather ||  !mOmniStyle) {
+            } else if (!mShowWeather || !mOmniStyle) {
                 mWeatherView.setVisibility(View.GONE);
                 mWeatherView.disableUpdates();
             }
