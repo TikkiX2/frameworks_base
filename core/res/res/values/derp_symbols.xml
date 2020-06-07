@@ -13,7 +13,10 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-  <!-- Whether to show a custom view for FOD -->
-  <java-symbol type="bool" name="config_needCustomFODView" />
+    <!-- Whether to show a custom view for FOD -->
+    <java-symbol type="bool" name="config_needCustomFODView" />
+
+    <!-- FOD icon dimming -->
+    <java-symbol type="bool" name="config_targetUsesInKernelDimming" />
 
 </resources>
