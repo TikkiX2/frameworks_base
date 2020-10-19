@@ -1874,6 +1874,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         ((MyLyricTicker)mLyricTicker).setView(tickerView);
         tickerTextView.setLyricTicker(mLyricTicker);
         mLyricTicker.setViews(tickerTextView, tickerIcon);
+        tickerView.setVisibility(View.GONE);
     }
 
     protected boolean toggleSplitScreenMode(int metricsDockAction, int metricsUndockAction) {
