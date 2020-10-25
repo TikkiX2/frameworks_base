@@ -232,12 +232,13 @@ oneway interface IStatusBar
      */
     void suppressAmbientDisplay(boolean suppress);
 
-
     /**
      * DerpFest
      */
     void toggleCameraFlash();
     void killForegroundApp();
+    void screenPinningStateChanged(boolean enabled);
+    void leftInLandscapeChanged(boolean isLeft);
 
     /**
      * Used to block or unblock usage of gestural navigation
