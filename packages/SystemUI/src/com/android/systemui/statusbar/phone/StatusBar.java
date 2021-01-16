@@ -1159,7 +1159,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         mAmbientIndicationContainer = mNotificationShadeWindowView.findViewById(
                 R.id.ambient_indication_container);
         if (mAmbientIndicationContainer != null) {
-            ((AmbientIndicationContainer) mAmbientIndicationContainer).initializeView(this);
+            ((AmbientIndicationContainer) mAmbientIndicationContainer).initializeView(this, mHandler);
         }
 
         mAutoHideController.setStatusBar(new AutoHideUiElement() {
@@ -3080,6 +3080,10 @@ public class StatusBar extends SystemUI implements DemoMode,
         mScreenPinningRequest.onConfigurationChanged();
     }
 
+    public NotificationLockscreenUserManager getNotificationLockscreenUserManager() {
+        return mLockscreenUserManager;
+    }
+
     /**
      * Notify the shade controller that the current user changed
      *
@@ -3657,6 +3661,14 @@ public class StatusBar extends SystemUI implements DemoMode,
         mNotificationPanelViewController.setDozing(mDozing, animate, mWakeUpTouchLocation);
         mPulseController.setDozing(mDozing);
         updateQsExpansionEnabled();
+
+        if (mAmbientIndicationContainer != null) {
+            ((AmbientIndicationContainer)mAmbientIndicationContainer)
+                    .updateDozingState(mDozing);
+        } else {
+            Log.d("StatusBar", "updateDozingState -> AmbientIndicationContainer null");
+        }
+
         Trace.endSection();
     }
 
@@ -3772,18 +3784,12 @@ public class StatusBar extends SystemUI implements DemoMode,
                         mStatusBarStateController.fromShadeLocked());
             }
             if (mStatusBarView != null) mStatusBarView.removePendingHideExpandedRunnables();
-            if (mAmbientIndicationContainer != null) {
-                mAmbientIndicationContainer.setVisibility(View.VISIBLE);
-            }
         } else {
             if (mKeyguardUserSwitcher != null) {
                 mKeyguardUserSwitcher.setKeyguard(false,
                         mStatusBarStateController.goingToFullShade() ||
                                 mState == StatusBarState.SHADE_LOCKED ||
                                 mStatusBarStateController.fromShadeLocked());
-            }
-            if (mAmbientIndicationContainer != null) {
-                mAmbientIndicationContainer.setVisibility(View.INVISIBLE);
             }
         }
         updateDozingState();
@@ -3794,6 +3800,13 @@ public class StatusBar extends SystemUI implements DemoMode,
         updateKeyguardState();
     
         ((StatusBarIconControllerImpl) mIconController).setKeyguardShowing(mState == StatusBarState.KEYGUARD);
+
+        if (mAmbientIndicationContainer != null) {
+            ((AmbientIndicationContainer)mAmbientIndicationContainer)
+                    .updateKeyguardState(mState == StatusBarState.KEYGUARD);
+        } else {
+            Log.d("StatusBar", "updateKeyguardState -> AmbientIndicationContainer null");
+        }
         Trace.endSection();
     }
 
