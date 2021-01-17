@@ -708,6 +708,7 @@ public class StatusBar extends SystemUI implements DemoMode,
     private final BubbleController mBubbleController;
     private final BubbleController.BubbleExpandListener mBubbleExpandListener;
     private final IFingerprintService mFingerprintService;
+    private boolean mShowNavBar;
 
     private ActivityIntentHelper mActivityIntentHelper;
 
@@ -1185,7 +1186,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         mNotificationPanelViewController.setHeadsUpManager(mHeadsUpManager);
         mNotificationLogger.setHeadsUpManager(mHeadsUpManager);
 
-        createNavigationBar(result);
+        updateNavigationBar(true);
 
         if (ENABLE_LOCKSCREEN_WALLPAPER && mWallpaperSupported) {
             mLockscreenWallpaper = mLockscreenWallpaperLazy.get();
@@ -2079,6 +2080,9 @@ public class StatusBar extends SystemUI implements DemoMode,
                     Settings.System.QS_SHOW_BATTERY_PERCENT),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.FORCE_SHOW_NAVBAR),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.QS_TILE_STYLE),
                     false, this, UserHandle.USER_ALL);
         }
@@ -2096,6 +2100,9 @@ public class StatusBar extends SystemUI implements DemoMode,
                 setPulseOnNewTracks();
             } else if (uri.equals(Settings.System.getUriFor(Settings.System.QS_SHOW_BATTERY_PERCENT))) {
                 setQsBatteryPercentMode();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.FORCE_SHOW_NAVBAR))) {
+                updateNavigationBar(false);
             } else if (uri.equals(Settings.System.getUriFor(Settings.System.QS_TILE_STYLE))) {
                 stockTileStyle();
                 updateTileStyle();
@@ -2108,6 +2115,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             setLockScreenMediaBlurLevel();
             setPulseOnNewTracks();
             setQsBatteryPercentMode();
+            updateNavigationBar(false);
         }
     }
 
@@ -2142,6 +2150,24 @@ public class StatusBar extends SystemUI implements DemoMode,
         if (getNavigationBarView() != null) {
             getNavigationBarView().setBlockedGesturalNavigation(blocked);
         }
+    }
+
+    private void updateNavigationBar(boolean init) {
+        boolean showNavBar = ActionUtils.deviceSupportNavigationBar(mContext);
+        if (init) {
+            if (showNavBar) {
+                mNavigationBarController.createNavigationBars(true, null);
+            }
+        } else {
+            if (showNavBar != mShowNavBar) {
+                if (showNavBar) {
+                    mNavigationBarController.createNavigationBars(true, null);
+                } else {
+                    mNavigationBarController.removeNavigationBar(mDisplayId);
+                }
+            }
+        }
+        mShowNavBar = showNavBar;
     }
 
     /**
