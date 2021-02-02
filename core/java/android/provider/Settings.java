@@ -5883,6 +5883,18 @@ public final class Settings {
         public static final String VISUALIZER_CENTER_MIRRORED = "visualizer_center_mirrored";
 
         /**
+         * Enable and disable QS Footer page indicator
+         * @hide
+         */
+        public static final String QS_FOOTER_PAGE_INDICATOR = "qs_footer_page_indicator";
+
+        /**
+         * Enable and disable QS header text
+         * @hide
+         */
+        public static final String QS_HEADER_TEXT_CONTAINER = "qs_header_text_container";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *

@@ -550,7 +550,7 @@ public class QuickStatusBarHeader extends RelativeLayout implements
         if (mHeaderTextContainerAlphaAnimator != null) {
             mHeaderTextContainerAlphaAnimator.setPosition(keyguardExpansionFraction);
             if (keyguardExpansionFraction > 0) {
-                mHeaderTextContainerView.setVisibility(VISIBLE);
+                mHeaderTextContainerView.setVisibility(getHeaderTextContainerVisibility());
             } else {
                 mHeaderTextContainerView.setVisibility(INVISIBLE);
             }
@@ -572,9 +572,15 @@ public class QuickStatusBarHeader extends RelativeLayout implements
         if (disabled == mQsDisabled) return;
         mQsDisabled = disabled;
         mHeaderQsPanel.setDisabledByPolicy(disabled);
-        mHeaderTextContainerView.setVisibility(mQsDisabled ? View.GONE : View.VISIBLE);
+        mHeaderTextContainerView.setVisibility(mQsDisabled ? View.GONE : getHeaderTextContainerVisibility());
         mQuickQsStatusIcons.setVisibility(mQsDisabled ? View.GONE : View.VISIBLE);
         updateResources();
+    }
+
+    private int getHeaderTextContainerVisibility() {
+        boolean show = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.QS_HEADER_TEXT_CONTAINER, 1) != 0;
+        return show ? View.VISIBLE : View.GONE;
     }
 
     @Override
