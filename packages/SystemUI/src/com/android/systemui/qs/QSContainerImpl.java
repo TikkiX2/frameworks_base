@@ -19,28 +19,46 @@ package com.android.systemui.qs;
 import static android.app.StatusBarManager.DISABLE2_QUICK_SETTINGS;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Outline;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.dynamicanimation.animation.FloatPropertyCompat;
 import androidx.dynamicanimation.animation.SpringForce;
 
+import com.android.internal.util.ImageUtils;
+import com.android.settingslib.Utils;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.omni.header.StatusBarHeaderMachine;
 import com.android.systemui.qs.customize.QSCustomizer;
 import com.android.systemui.tuner.TunerService;
 import com.android.systemui.util.animation.PhysicsAnimator;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Wrapper view with background which contains {@link QSPanel} and {@link BaseStatusBarHeader}
@@ -56,6 +74,8 @@ public class QSContainerImpl extends FrameLayout implements
             "system:" + Settings.System.QS_SB_BG_GRADIENT;
     private static final String QS_SB_BG_ALPHA =
             "system:" + Settings.System.QS_SB_BG_ALPHA;
+
+    private Context mContext;
 
     private final Point mSizePoint = new Point();
     private static final FloatPropertyCompat<QSContainerImpl> BACKGROUND_BOTTOM =
@@ -86,6 +106,10 @@ public class QSContainerImpl extends FrameLayout implements
     private View mBackground;
     private View mBackgroundGradient;
     private View mStatusBarBackground;
+    private ImageView mQSBackgroundImage; // Image Background
+    private BitmapDrawable mImage;
+    private Bitmap mOriginalImage;
+    private String mImageURI;
 
     private int mSideMargins;
     private boolean mQsDisabled;
@@ -104,8 +128,12 @@ public class QSContainerImpl extends FrameLayout implements
     private boolean mQsSBBackgroundGradient = true;
     private int mQsSBBackgroundAlpha = 255;
 
+    // Image File Name.
+    private static final String CUSTOM_IMAGE = "quick_settings_background_image";
+
     public QSContainerImpl(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mContext = context;
         mStatusBarHeaderMachine = new StatusBarHeaderMachine(context);
     }
 
@@ -123,6 +151,8 @@ public class QSContainerImpl extends FrameLayout implements
         mBackgroundGradient = findViewById(R.id.quick_settings_gradient_view);
         mBackgroundImage = findViewById(R.id.qs_header_image_view);
         mBackgroundImage.setClipToOutline(true);
+        mQSBackgroundImage = findViewById(R.id.quick_settings_background_image);
+        mQSBackgroundImage.setClipToOutline(true);
         updateResources();
         mHeader.getHeaderQsPanel().setMediaVisibilityChangedListener((visible) -> {
             if (mHeader.getHeaderQsPanel().isShown()) {
@@ -144,6 +174,8 @@ public class QSContainerImpl extends FrameLayout implements
         // the layout and the animation wouldn't properly start at the old position.
         mBackgroundBottom = value;
         mBackground.setBottom(value);
+        mQSBackgroundImage.setBottom(value);
+        updateBackgroundImage();
     }
 
     private float getBackgroundBottom() {
@@ -274,6 +306,7 @@ public class QSContainerImpl extends FrameLayout implements
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
         updateExpansion(mAnimateBottomOnNextLayout /* animate */);
+        updateBackgroundImage();
         mAnimateBottomOnNextLayout = false;
     }
 
@@ -282,6 +315,7 @@ public class QSContainerImpl extends FrameLayout implements
         if (disabled == mQsDisabled) return;
         mQsDisabled = disabled;
         mBackground.setVisibility(mQsDisabled ? View.GONE : View.VISIBLE);
+        mQSBackgroundImage.setVisibility(mQsDisabled ? View.GONE : View.VISIBLE);
         updateStatusbarVisibility();
     }
 
@@ -314,6 +348,42 @@ public class QSContainerImpl extends FrameLayout implements
         mStatusBarBackground.setLayoutParams(lp);
 
         updateStatusbarVisibility();
+        updateBackgroundImage();
+    }
+
+    private void setBackgroundImage() {
+        mQSBackgroundImage.setImageDrawable(mImage);
+    }
+
+    private void updateBackgroundImage() {
+        // get width display
+        DisplayMetrics metrics = new DisplayMetrics();
+        WindowManager wm = mContext.getSystemService(WindowManager.class);
+        wm.getDefaultDisplay().getRealMetrics(metrics);
+        int maxWidth = metrics.widthPixels;
+        int maxHeight = metrics.heightPixels;
+
+        // Setting Background ImageView
+        String imageUri = Settings.System.getString(mContext.getContentResolver(),
+              Settings.System.QS_PANEL_CUSTOM_IMAGE);
+        boolean show = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.QS_PANEL_IMAGE_ENABLED, 0) != 0;
+        if (imageUri != null) {
+            if (mImageURI != imageUri) {
+                mImageURI = imageUri;
+                saveImage(mContext, Uri.parse(imageUri));
+                mOriginalImage = loadImage(mContext);
+            }
+            if (mOriginalImage != null) {
+                mImage = new BitmapDrawable(mContext.getResources(), ImageUtils.scaleBitmap(mOriginalImage, maxWidth, maxHeight));
+                setBackgroundImage();
+                mQSBackgroundImage.setVisibility(show ? View.VISIBLE : View.GONE);
+                mBackground.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        } else {
+            mQSBackgroundImage.setVisibility(View.GONE);
+            mBackground.setVisibility(mQsDisabled ? View.GONE : View.VISIBLE);
+        }
     }
 
     /**
@@ -338,6 +408,7 @@ public class QSContainerImpl extends FrameLayout implements
         // Pin the drag handle to the bottom of the panel.
         mDragHandle.setTranslationY(height - mDragHandle.getHeight());
         mBackground.setTop(mQSPanelContainer.getTop());
+        mQSBackgroundImage.setTop(mQSPanelContainer.getTop());
         updateBackgroundBottom(height, animate);
     }
 
@@ -479,5 +550,40 @@ public class QSContainerImpl extends FrameLayout implements
 
         updateAlpha();
         applyHeaderBackgroundShadow();
+    }
+
+    private void saveImage(Context context, Uri imageUri) {
+        try {
+            final InputStream imageStream = context.getContentResolver().openInputStream(imageUri);
+            File file = new File(context.getFilesDir(), CUSTOM_IMAGE);
+            if (file.exists()) {
+                file.delete();
+            }
+            FileOutputStream output = new FileOutputStream(file);
+            byte[] buffer = new byte[8 * 1024];
+            int read;
+
+            while ((read = imageStream.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+            output.flush();
+        } catch (IOException e) {
+            Log.e("QSContainerImpl", "Save image failed " + " " + imageUri);
+        }
+    }
+
+    private Bitmap loadImage(Context context) {
+        try {
+            Bitmap result = null;
+            File file = new File(context.getFilesDir(), CUSTOM_IMAGE);
+            if (file.exists()) {
+                final Bitmap image = BitmapFactory.decodeFile(file.getAbsolutePath());
+                result = image;
+            }
+            return result;
+        } catch (Exception e) {
+            Log.e("QSContainerImpl", "Request image failed ", e);
+            return null;
+        }
     }
 }
