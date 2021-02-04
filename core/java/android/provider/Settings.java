@@ -5504,7 +5504,13 @@ public final class Settings {
          */
         public static final String SWITCH_STYLE = "switch_style";
 
-	/**
+        /**
+         * Enable and disable Artwork on background media notification
+         * @hide
+         */
+        public static final String ARTWORK_MEDIA_BACKGROUND = "artwork_media_background";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
