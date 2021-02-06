@@ -5394,6 +5394,18 @@ public final class Settings {
         public static final String FOD_ANIM = "fod_anim";
 
         /**
+         * FOD icon picker
+         * @hide
+         */
+        public static final String FOD_ICON = "fod_icon";
+
+        /**
+         * FOD use wallpaper color
+         * @hide
+         */
+        public static final String FOD_ICON_WALLPAPER_COLOR = "fod_icon_wallpaper_color";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
