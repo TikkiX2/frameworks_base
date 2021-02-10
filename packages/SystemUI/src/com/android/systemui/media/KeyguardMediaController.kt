@@ -75,7 +75,8 @@ class KeyguardMediaController @Inject constructor(
         val shouldBeVisible = mediaHost.visible &&
                 !bypassController.bypassEnabled &&
                 keyguardOrUserSwitcher &&
-                notifLockscreenUserManager.shouldShowLockscreenNotifications()
+                notifLockscreenUserManager.shouldShowLockscreenNotifications() &&
+                !notifLockscreenUserManager.isShowSmartMedia()
         val previousVisibility = view?.visibility ?: View.GONE
         val newVisibility = if (shouldBeVisible) View.VISIBLE else View.GONE
         view?.visibility = newVisibility

@@ -64,12 +64,4 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/clock_view" />
-
-     <include
-          layout="@layout/synth_media_view"
-          android:id="@+id/synth_smart_media"
-          android:layout_width="match_parent"
-          android:layout_height="@dimen/smart_media_height"
-          android:layout_gravity="center_horizontal"
-          android:layout_alignParentTop="true" />
 </com.android.keyguard.KeyguardClockSwitch>

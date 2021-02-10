@@ -27,5 +27,5 @@
     <dimen name="btlg_tag_height">165dp</dimen>
 
     <!-- The height if the smart media -->
-    <dimen name="smart_media_height">200dp</dimen>
+    <dimen name="smart_media_height">160dp</dimen>
 </resources>

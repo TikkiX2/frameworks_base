@@ -90,6 +90,8 @@ public class KeyguardStatusView extends GridLayout implements
 
     private SynthMediaView mSmartMedia;
     private View mSmallClockView;
+    private View mItemsContainer;
+    private View mStatusContainer;
 
     private boolean mPulsing;
     private float mDarkAmount = 0;
@@ -285,6 +287,8 @@ public class KeyguardStatusView extends GridLayout implements
         mTextColor = mClockView.getCurrentTextColor();
         
         mSmallClockView = findViewById(R.id.clock_view);
+        mItemsContainer = findViewById(R.id.items_container);
+        mStatusContainer = findViewById(R.id.status_container);
         mSmartMedia = (SynthMediaView) findViewById(R.id.synth_smart_media);
         setSmartMedia();
         setSmartMediaInvisibleImmediately();
@@ -571,7 +575,7 @@ public class KeyguardStatusView extends GridLayout implements
     private void setSmartMedia() {
         mSmartMedia.setState(true);
         mSmartMediaBottom = getResources().getDimensionPixelSize(R.dimen.smart_media_height);
-        mClockView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
+        OnSwipeTouchListener touchListener = new OnSwipeTouchListener(mContext) {
             @Override
             public void onSwipeTop() {
             }
@@ -590,7 +594,8 @@ public class KeyguardStatusView extends GridLayout implements
             public void onSwipeBottom() {
             }
         
-        });
+        };
+        mItemsContainer.setOnTouchListener(touchListener);
     }
 
     private boolean getShowSmartMedia() {
@@ -603,17 +608,15 @@ public class KeyguardStatusView extends GridLayout implements
     }
 
     private void updateSmartMediaVisibilityAuto() {
+        customHandler.removeCallbacks(setSmartMediaVisible);
+        customHandler.removeCallbacks(setSmartMediaInvisible);
         if (!mSmartMediaOnAnimation) {
             if ((getShowSmartMedia() && !mSmartMediaVisibility) && isNowPlaying()) {
                 if (mSmartMediaAutoShow != 0) {
-                    customHandler.removeCallbacks(setSmartMediaVisible);
-                    customHandler.removeCallbacks(setSmartMediaInvisible);
                     customHandler.postDelayed(setSmartMediaVisible, mSmartMediaAutoShow * 1000);
                 }
             } else if (mSmartMediaVisibility) {
                 if (mSmartMediaAutoHide != 0) {
-                    customHandler.removeCallbacks(setSmartMediaVisible);
-                    customHandler.removeCallbacks(setSmartMediaInvisible);
                     customHandler.postDelayed(setSmartMediaInvisible, mSmartMediaAutoHide * 1000);
                 }
             }
@@ -674,11 +677,21 @@ public class KeyguardStatusView extends GridLayout implements
                                 updateSmartMediaVisibilityAuto();
                             })
                             .start();
-        mSmallClockView.setAlpha(1);
-        mSmallClockView.setTranslationX(0);
-        mSmallClockView.animate()
+        mSmartMedia.animate()
+                            .setUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                @Override
+                                public void onAnimationUpdate(ValueAnimator animation) {
+                                    mSmartMedia.getLayoutParams().height = (int) ((float) mSmartMediaBottom * animation.getAnimatedFraction());
+                                    mSmartMedia.requestLayout();
+                                }
+                            })
+                            .setDuration(50)
+                            .start();
+        mStatusContainer.setAlpha(1);
+        mStatusContainer.setTranslationX(0);
+        mStatusContainer.animate()
                             .alpha(0)
-                            .translationX(mSmartMediaDirection ? mSmallClockView.getWidth() : -mSmallClockView.getWidth())
+                            .translationX(mSmartMediaDirection ? mStatusContainer.getWidth() : -mStatusContainer.getWidth())
                             .setDuration(SMART_MEDIA_ANIMATION_DURATION)
                             .start();
     }
@@ -707,9 +720,19 @@ public class KeyguardStatusView extends GridLayout implements
                                 updateSmartMediaVisibilityAuto();
                             })
                             .start();
-        mSmallClockView.setAlpha(0);
-        mSmallClockView.setTranslationX(mSmartMediaDirection ? -mSmallClockView.getWidth() : mSmallClockView.getWidth());
-        mSmallClockView.animate()
+        mSmartMedia.animate()
+                            .setUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                @Override
+                                public void onAnimationUpdate(ValueAnimator animation) {
+                                    mSmartMedia.getLayoutParams().height = mSmartMediaBottom - (int) ((float) mSmartMediaBottom * animation.getAnimatedFraction());
+                                    mSmartMedia.requestLayout();
+                                }
+                            })
+                            .setDuration(50)
+                            .start();
+        mStatusContainer.setAlpha(0);
+        mStatusContainer.setTranslationX(mSmartMediaDirection ? -mStatusContainer.getWidth() : mStatusContainer.getWidth());
+        mStatusContainer.animate()
                             .alpha(1)
                             .translationX(0)
                             .setDuration(SMART_MEDIA_ANIMATION_DURATION)
@@ -722,8 +745,8 @@ public class KeyguardStatusView extends GridLayout implements
         mSmartMedia.setTranslationX(mSmartMediaDirection ? mSmartMedia.getWidth() : -mSmartMedia.getWidth());
         mSmartMedia.getLayoutParams().height = mSmartMediaBottom - (int) ((float) mSmartMediaBottom * 1);
         mSmartMedia.requestLayout();
-        mSmallClockView.setAlpha(1);
-        mSmallClockView.setTranslationX(0);
+        mStatusContainer.setAlpha(1);
+        mStatusContainer.setTranslationX(0);
         mSmartMediaVisibility = false;
         mSmartMediaOnAnimation = false;
         updateSmartMediaVisibilityAuto();

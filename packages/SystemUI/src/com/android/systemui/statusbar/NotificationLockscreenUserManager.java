@@ -61,6 +61,7 @@ public interface NotificationLockscreenUserManager {
 
     boolean shouldShowLockscreenNotifications();
 
+    boolean isShowSmartMedia();
     boolean shouldHideNotifications(int userId);
     boolean shouldHideNotifications(String key);
     boolean shouldShowOnKeyguard(NotificationEntry entry);

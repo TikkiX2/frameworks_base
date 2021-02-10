@@ -315,6 +315,11 @@ public class NotificationLockscreenUserManagerImpl implements
         return Dependency.get(KeyguardUpdateMonitor.class).isUserInLockdown(userId);
     }
 
+    public boolean isShowSmartMedia() {
+        return Settings.System.getIntForUser(mContext.getContentResolver(),
+        Settings.System.SYNTH_SMART_MEDIA, 1, UserHandle.USER_CURRENT) == 1;
+    }
+
     /**
      * Returns true if we're on a secure lockscreen and the user wants to hide notification data.
      * If so, notifications should be hidden.

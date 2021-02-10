@@ -50,34 +50,58 @@
             android:textSize="13sp"
             android:text="@*android:string/global_action_logout" />
 
-        <include
-            layout="@layout/keyguard_clock_switch"
-            android:id="@+id/keyguard_clock_container"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-        <include layout="@layout/current_weather_view"
-            android:id="@+id/weather_container"
+        <FrameLayout
+            android:id="@+id/items_container"
+            android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_centerHorizontal="true"
-            android:visibility="gone"
-            android:layout_marginTop="@dimen/date_owner_info_margin"
-            android:layout_below="@id/keyguard_status_area"/>
+            android:clipChildren="false"
+            android:clipToPadding="false">
+            <LinearLayout
+                android:id="@+id/status_container"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical">
+                <include
+                    layout="@layout/keyguard_clock_switch"
+                    android:id="@+id/keyguard_clock_container"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+                <include layout="@layout/current_weather_view"
+                    android:id="@+id/weather_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_centerHorizontal="true"
+                    android:visibility="gone"
+                    android:layout_marginTop="@dimen/date_owner_info_margin"
+                    android:layout_below="@id/keyguard_status_area"/>
 
-        <TextView
-            android:id="@+id/owner_info"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/date_owner_info_margin"
-            android:textColor="?attr/wallpaperTextColorSecondary"
-            android:ellipsize="marquee"
-            android:singleLine="true"
-            style="@style/TextAppearance.Keyguard" />
+                <TextView
+                    android:id="@+id/owner_info"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/date_owner_info_margin"
+                    android:textColor="?attr/wallpaperTextColorSecondary"
+                    android:ellipsize="marquee"
+                    android:singleLine="true"
+                    style="@style/TextAppearance.Keyguard" />
+            </LinearLayout>
+
+            <include
+                layout="@layout/synth_media_view"
+                android:id="@+id/synth_smart_media"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/smart_media_height"
+                android:layout_gravity="center_horizontal"
+                android:layout_alignBottom="@id/status_container" />
+        </FrameLayout>
+
         <com.android.systemui.statusbar.phone.NotificationIconContainer
             android:id="@+id/clock_notification_icon_container"
             android:layout_width="match_parent"
