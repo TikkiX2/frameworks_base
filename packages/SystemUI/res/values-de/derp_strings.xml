@@ -62,4 +62,7 @@
     <string name="global_action_restart_bootloader">Bootloader</string>
     <string name="global_action_restart_ui">System UI</string>
 
+    <!-- Biometric Dialog - Use Face -->
+    <string name="biometric_dialog_button_use_face">Gesicht verwenden</string>
+
 </resources>
