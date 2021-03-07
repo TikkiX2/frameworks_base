@@ -4827,12 +4827,6 @@ public final class Settings {
         public static final String BACK_GESTURE_HAPTIC = "back_gesture_haptic";
 
         /**
-         * Whether to enable SmartSpace
-         * @hide
-         */
-        public static final String SMART_SPACE = "smart_space";
-
-        /**
          * Which Vibration Pattern to use
          * 0: dzzz-dzzz
          * 1: dzzz-da
