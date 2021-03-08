@@ -105,7 +105,6 @@ import com.android.systemui.volume.VolumeComponent;
 import com.android.systemui.statusbar.phone.StatusBar;
 
 import com.google.android.systemui.statusbar.phone.StatusBarGoogle;
-import com.google.android.systemui.smartspace.SmartSpaceController;
 
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -123,7 +122,6 @@ public interface StatusBarGoogleModule {
     @Provides
     @Singleton
     static StatusBar provideStatusBar(
-            SmartSpaceController smartSpaceController,
             Context context,
             NotificationsController notificationsController,
             LightBarController lightBarController,
@@ -205,7 +203,6 @@ public interface StatusBarGoogleModule {
             DismissCallbackRegistry dismissCallbackRegistry,
             StatusBarTouchableRegionManager statusBarTouchableRegionManager) {
         return new StatusBarGoogle(
-                smartSpaceController,
                 context,
                 notificationsController,
                 lightBarController,
