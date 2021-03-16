@@ -66,6 +66,9 @@
     <string name="global_action_restart_recovery">Wiederherstellung</string>
     <string name="global_action_restart_bootloader">Bootloader</string>
     <string name="global_action_restart_ui">System UI</string>
+    <string name="global_action_screenshot">Screenshot</string>
+    <string name="global_action_screenrecord">Bildschirmaufnahme</string>
+    <string name="global_action_flashlight">Taschenlampe</string>
 
     <!-- Biometric Dialog - Use Face -->
     <string name="biometric_dialog_button_use_face">Gesicht verwenden</string>
