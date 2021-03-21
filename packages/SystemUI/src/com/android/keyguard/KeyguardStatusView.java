@@ -35,9 +35,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Slog;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.core.graphics.ColorUtils;
@@ -103,6 +105,7 @@ public class KeyguardStatusView extends GridLayout implements
             refreshTime();
             refreshLockFont();
             refreshLockDateFont();
+            updateClockPosition();
         }
 
         @Override
@@ -119,6 +122,8 @@ public class KeyguardStatusView extends GridLayout implements
                 updateLogoutView();
                 refreshLockDateFont();
                 updateWeatherView();
+                updateSettings();
+                updateClockPosition();
             }
         }
 
@@ -139,6 +144,7 @@ public class KeyguardStatusView extends GridLayout implements
             updateLogoutView();
             refreshLockDateFont();
             updateWeatherView();
+            updateClockPosition();
         }
 
         @Override
@@ -235,6 +241,7 @@ public class KeyguardStatusView extends GridLayout implements
         updateDark();
         refreshLockDateFont();
         updateWeatherView();
+        updateClockPosition();
 
         mKeyguardSlice.setContentChangeListener(this::onSliceContentChanged);
         onSliceContentChanged();
@@ -307,6 +314,16 @@ public class KeyguardStatusView extends GridLayout implements
     private int getLockDateFont() {
         return Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.LOCK_DATE_FONTS, 1);
+    }
+
+    private int getLockClockPosition() {
+        return Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.LOCK_CLOCK_POSITION, 1);
+    }
+
+    private int getOwnerInfoPosition() {
+        return Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.LOCK_OWNER_INFO_POSITION, 1);
     }
 
     private void refreshFormat() {
@@ -430,6 +447,33 @@ public class KeyguardStatusView extends GridLayout implements
         return mClockView.getPreferredY(totalHeight);
     }
 
+    private void updateClockPosition() {
+        final int position = getLockClockPosition();
+        final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mKeyguardSlice.getLayoutParams();
+        switch (position) {
+            case 0:
+                lp.removeRule(RelativeLayout.ALIGN_RIGHT);
+                lp.addRule(RelativeLayout.ALIGN_LEFT);
+                lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
+                mClockView.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
+                break;
+            case 1:
+            default:
+                lp.removeRule(RelativeLayout.ALIGN_RIGHT);
+                lp.removeRule(RelativeLayout.ALIGN_LEFT);
+                lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                mClockView.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
+                break;
+            case 2:
+                lp.addRule(RelativeLayout.ALIGN_RIGHT);
+                lp.removeRule(RelativeLayout.ALIGN_LEFT);
+                lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
+                mClockView.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                break;
+        }
+        mKeyguardSlice.setLayoutParams(lp);
+    }
+
     private void updateLogoutView() {
         if (mLogoutView == null) {
             return;
@@ -443,6 +487,7 @@ public class KeyguardStatusView extends GridLayout implements
     private void updateOwnerInfo() {
         if (mOwnerInfo == null) return;
         String info = mLockPatternUtils.getDeviceOwnerInfo();
+        int position = getOwnerInfoPosition();
         if (info == null) {
             // Use the current user owner information if enabled.
             final boolean ownerInfoEnabled = mLockPatternUtils.isOwnerInfoEnabled(
@@ -452,6 +497,17 @@ public class KeyguardStatusView extends GridLayout implements
             }
         }
         mOwnerInfo.setText(info);
+        switch (position) {
+            case 0:
+                mOwnerInfo.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
+                break;
+            case 1:
+                mOwnerInfo.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
+                break;
+            case 2:
+                mOwnerInfo.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                break;
+        }
         updateDark();
     }
 

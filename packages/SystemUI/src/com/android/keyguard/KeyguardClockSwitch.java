@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextClock;
+import android.widget.TextView;
 
 import androidx.annotation.VisibleForTesting;
 
@@ -248,7 +249,7 @@ public class KeyguardClockSwitch extends RelativeLayout {
         View smallClockView = plugin.getView();
         if (smallClockView != null) {
             mSmallClockFrame.addView(smallClockView, -1,
-                    new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT));
             mClockView.setVisibility(View.GONE);
             mClockViewBold.setVisibility(View.GONE);
@@ -337,6 +338,22 @@ public class KeyguardClockSwitch extends RelativeLayout {
     public void setFormat24Hour(CharSequence format) {
         mClockView.setFormat24Hour(format);
         mClockViewBold.setFormat24Hour(format);
+    }
+
+    public void setGravity(int gravity) {
+        mClockView.setGravity(gravity);
+        mClockViewBold.setGravity(gravity);
+        if (mClockPlugin != null) {
+            if (mClockPlugin.getName() != "type") {
+                FrameLayout view = (FrameLayout) mClockPlugin.getView();
+                FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
+                lp.gravity = gravity;
+                view.setLayoutParams(lp);
+            } else {
+                TextView view = (TextView) mClockPlugin.getView();
+                view.setGravity(gravity);
+            }
+        }
     }
 
     /**

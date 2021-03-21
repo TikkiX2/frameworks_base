@@ -88,6 +88,8 @@
             android:layout_height="@dimen/keyguard_lock_height"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="@dimen/keyguard_lock_padding"
+            android:layout_marginLeft="@dimen/keyguard_lock_padding"
+            android:layout_marginRight="@dimen/keyguard_lock_padding"
             android:contentDescription="@string/accessibility_unlock_button"
             android:src="@*android:drawable/ic_lock"
             android:scaleType="center" />
@@ -97,6 +99,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/keyguard_lock_padding"
+            android:layout_marginLeft="@dimen/keyguard_lock_padding"
+            android:layout_marginRight="@dimen/keyguard_lock_padding"
             android:gravity="center"
             android:singleLine="true"
             android:ellipsize="marquee"

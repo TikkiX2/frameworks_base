@@ -5818,7 +5818,24 @@ public final class Settings {
          */
         public static final String QS_PANEL_CUSTOM_IMAGE = "qs_panel_custom_image";
 
+        /**
+         * Lock Icon Position
+         * @hide
          */
+        public static final String LOCK_ICON_POSITION = "lock_icon_position";
+
+        /**
+         * Lock Clock Position
+         * @hide
+         */
+        public static final String LOCK_CLOCK_POSITION = "lock_clock_position";
+
+        /**
+         * Owner Info Position
+         * @hide
+         */
+        public static final String LOCK_OWNER_INFO_POSITION = "lock_owner_info_position";
+
         /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.

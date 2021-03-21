@@ -26,16 +26,21 @@ import static com.android.systemui.statusbar.phone.BiometricUnlockController.MOD
 import static com.android.systemui.statusbar.phone.BiometricUnlockController.MODE_WAKE_AND_UNLOCK_PULSING;
 
 import android.content.ComponentCallbacks2;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.UserHandle;
 import android.provider.Settings;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewRootImpl;
 import android.view.WindowManagerGlobal;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import androidx.annotation.VisibleForTesting;
 
@@ -50,6 +55,7 @@ import com.android.systemui.DejankUtils;
 import com.android.systemui.SystemUIFactory;
 import com.android.systemui.dock.DockManager;
 import com.android.systemui.keyguard.DismissCallbackRegistry;
+import com.android.systemui.R;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.shared.system.QuickStepContract;
@@ -319,6 +325,8 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                 Settings.Secure.HIDE_LOCKICON, 1) == 1;
         boolean lockVisible = (mBouncer.isShowing() || keyguardWithoutQs) && !isHideLockIcon
                 && !mBouncer.isAnimatingAway() && !mKeyguardStateController.isKeyguardFadingAway();
+        int position = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.LOCK_ICON_POSITION, 1);
 
         if (mLastLockVisible != lockVisible) {
             mLastLockVisible = lockVisible;
@@ -339,6 +347,25 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                 CrossFadeHelper.fadeOut(mLockIconContainer, duration, delay, null /* runnable */);
             }
         }
+
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mLockIconContainer.getLayoutParams();
+        LinearLayout.LayoutParams lpIcon = (LinearLayout.LayoutParams) mLockIconContainer.findViewById(R.id.lock_icon).getLayoutParams();
+        switch (position) {
+            case 0:
+                lp.gravity = Gravity.TOP|Gravity.LEFT;
+                lpIcon.gravity = Gravity.LEFT;
+                break;
+            case 1:
+                lp.gravity = Gravity.TOP|Gravity.CENTER_HORIZONTAL;
+                lpIcon.gravity = Gravity.CENTER_HORIZONTAL;
+                break;
+            case 2:
+                lp.gravity = Gravity.TOP|Gravity.RIGHT;
+                lpIcon.gravity = Gravity.RIGHT;
+                break;
+        }
+        mLockIconContainer.setLayoutParams(lp);
+        mLockIconContainer.findViewById(R.id.lock_icon).setLayoutParams(lpIcon);
     }
 
     /**
