@@ -5789,6 +5789,24 @@ public final class Settings {
         public static final String SBC_HD_PRIORITY = "sbc_hd_priority";
 
         /**
+         * Synthetic Clock Custom Image
+         * @hide
+         */
+        public static final String SYNTHETIC_CUSTOM_IMAGE = "synthetic_custom_image";
+
+        /**
+         * Synthetic Clock Format
+         * @hide
+         */
+        public static final String SYNTHETIC_CLOCK_FORMAT = "synthetic_clock_format";
+
+        /**
+         * Synthetic Date Format
+         * @hide
+         */
+        public static final String SYNTHETIC_DATE_FORMAT = "synthetic_date_format";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
