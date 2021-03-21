@@ -46,7 +46,8 @@ public class DescendantSeamlessClockSwitch {
         "com.android.keyguard.clock.OronosClockController",
         "com.android.keyguard.clock.OronosReshapedClockController",
         "com.android.keyguard.clock.OctaviDigitalClockController",
-        "com.android.keyguard.clock.Fluidv2ClockController"
+        "com.android.keyguard.clock.Fluidv2ClockController",
+        "com.android.keyguard.clock.SyntheticClockController"
     };
 
     public static int getCurrentPosition(String currentClockFace) {
