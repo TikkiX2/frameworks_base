@@ -511,12 +511,14 @@ public class KeyguardStatusView extends GridLayout implements
     private void updateClockPosition() {
         final int position = getLockClockPosition();
         final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mKeyguardSlice.getLayoutParams();
+        final LinearLayout.LayoutParams wLp = (LinearLayout.LayoutParams) mWeatherView.getLayoutParams();
         switch (position) {
             case 0:
                 lp.removeRule(RelativeLayout.ALIGN_RIGHT);
                 lp.addRule(RelativeLayout.ALIGN_LEFT);
                 lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
                 mClockView.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
+                wLp.gravity = (Gravity.LEFT|Gravity.CENTER_VERTICAL);
                 break;
             case 1:
             default:
@@ -524,15 +526,18 @@ public class KeyguardStatusView extends GridLayout implements
                 lp.removeRule(RelativeLayout.ALIGN_LEFT);
                 lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
                 mClockView.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
+                wLp.gravity = (Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
                 break;
             case 2:
                 lp.addRule(RelativeLayout.ALIGN_RIGHT);
                 lp.removeRule(RelativeLayout.ALIGN_LEFT);
                 lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
                 mClockView.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                wLp.gravity = (Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 break;
         }
         mKeyguardSlice.setLayoutParams(lp);
+        mWeatherView.setLayoutParams(wLp);
     }
 
     private void updateLogoutView() {
