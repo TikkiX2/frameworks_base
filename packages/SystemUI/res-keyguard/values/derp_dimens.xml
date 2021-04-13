@@ -25,4 +25,7 @@
     <!-- Tag clock size -->
     <dimen name="btlg_tag_width">300dp</dimen>
     <dimen name="btlg_tag_height">165dp</dimen>
+
+    <!-- The height if the smart media -->
+    <dimen name="smart_media_height">200dp</dimen>
 </resources>

@@ -16,6 +16,7 @@
 
 package com.android.keyguard;
 
+import android.animation.ValueAnimator;
 import android.app.ActivityManager;
 import android.app.IActivityManager;
 import android.content.Context;
@@ -23,6 +24,7 @@ import android.content.ContentResolver;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.session.PlaybackState;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
@@ -35,8 +37,14 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Slog;
 import android.util.TypedValue;
+import android.view.GestureDetector;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -49,8 +57,10 @@ import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.Interpolators;
 import com.android.systemui.omni.CurrentWeatherView;
+import com.android.systemui.statusbar.NotificationMediaManager;
 import com.android.systemui.statusbar.policy.ConfigurationController;
 import com.android.systemui.tuner.TunerService;
+import com.android.systemui.synth.SynthMediaView;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -62,9 +72,12 @@ public class KeyguardStatusView extends GridLayout implements
     private static final boolean DEBUG = KeyguardConstants.DEBUG;
     private static final String TAG = "KeyguardStatusView";
     private static final int MARQUEE_DELAY_MS = 2000;
+    private static final int SMART_MEDIA_ANIMATION_DURATION = 300;
 
     private final LockPatternUtils mLockPatternUtils;
     private final IActivityManager mIActivityManager;
+
+    private Context mContext;
 
     private LinearLayout mStatusViewContainer;
     private TextView mLogoutView;
@@ -75,6 +88,9 @@ public class KeyguardStatusView extends GridLayout implements
     private Runnable mPendingMarqueeStart;
     private Handler mHandler;
 
+    private SynthMediaView mSmartMedia;
+    private View mSmallClockView;
+
     private boolean mPulsing;
     private float mDarkAmount = 0;
     private int mTextColor;
@@ -83,6 +99,34 @@ public class KeyguardStatusView extends GridLayout implements
             "system:" + Settings.System.OMNI_LOCKSCREEN_WEATHER_ENABLED;
     private static final String LOCKSCREEN_WEATHER_STYLE =
             "system:" + Settings.System.AICP_LOCKSCREEN_WEATHER_STYLE;
+
+    private boolean mSmartMediaVisibility = false;
+    private boolean mSmartMediaOnAnimation = false;
+    private boolean mSmartMediaDirection = false; // false = to left - true = to right 
+    private int mSmartMediaBottomInitial;
+    private int mSmartMediaBottom;
+    private int mSmartMediaAutoHide;
+    private int mSmartMediaAutoShow;
+
+    private Handler customHandler = new Handler();
+
+    private Runnable setSmartMediaVisible = new Runnable() {
+        public void run() {
+            setSmartMediaVisible();
+        }
+    };
+
+    private Runnable setSmartMediaInvisible = new Runnable() {
+        public void run() {
+            setSmartMediaInvisible();
+        }
+    };
+
+    private Runnable updateSmartMediaVisibilityAuto = new Runnable() {
+        public void run() {
+            updateSmartMediaVisibilityAuto();
+        }
+    };
 
     /**
      * Bottom margin that defines the margin between bottom of smart space and top of notification
@@ -106,6 +150,7 @@ public class KeyguardStatusView extends GridLayout implements
             refreshLockFont();
             refreshLockDateFont();
             updateClockPosition();
+            updateSmartMedia();
         }
 
         @Override
@@ -124,17 +169,21 @@ public class KeyguardStatusView extends GridLayout implements
                 updateWeatherView();
                 updateSettings();
                 updateClockPosition();
+                updateSmartMedia();
+                updateSmartMediaVisibilityAuto();
             }
         }
 
         @Override
         public void onStartedWakingUp() {
             setEnableMarquee(true);
+            setSmartMediaInvisibleImmediately();
         }
 
         @Override
         public void onFinishedGoingToSleep(int why) {
             setEnableMarquee(false);
+            setSmartMediaInvisibleImmediately();
         }
 
         @Override
@@ -145,6 +194,7 @@ public class KeyguardStatusView extends GridLayout implements
             refreshLockDateFont();
             updateWeatherView();
             updateClockPosition();
+            updateSmartMedia();
         }
 
         @Override
@@ -163,6 +213,7 @@ public class KeyguardStatusView extends GridLayout implements
 
     public KeyguardStatusView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        mContext = context;
         mIActivityManager = ActivityManager.getService();
         mLockPatternUtils = new LockPatternUtils(getContext());
         mHandler = new Handler();
@@ -232,6 +283,12 @@ public class KeyguardStatusView extends GridLayout implements
 
         mWeatherView = (CurrentWeatherView) findViewById(R.id.weather_container);
         mTextColor = mClockView.getCurrentTextColor();
+        
+        mSmallClockView = findViewById(R.id.clock_view);
+        mSmartMedia = (SynthMediaView) findViewById(R.id.synth_smart_media);
+        setSmartMedia();
+        setSmartMediaInvisibleImmediately();
+        updateSmartMedia();
 
         boolean shouldMarquee = Dependency.get(KeyguardUpdateMonitor.class).isDeviceInteractive();
         setEnableMarquee(shouldMarquee);
@@ -509,6 +566,168 @@ public class KeyguardStatusView extends GridLayout implements
                 break;
         }
         updateDark();
+    }
+
+    private void setSmartMedia() {
+        mSmartMedia.setState(true);
+        mSmartMediaBottom = getResources().getDimensionPixelSize(R.dimen.smart_media_height);
+        mClockView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
+            @Override
+            public void onSwipeTop() {
+            }
+
+            @Override
+            public void onSwipeRight() {
+                updateSmartMediaVisibility(true);
+            }
+
+            @Override
+            public void onSwipeLeft() {
+                updateSmartMediaVisibility(false);
+            }
+
+            @Override
+            public void onSwipeBottom() {
+            }
+        
+        });
+    }
+
+    private boolean getShowSmartMedia() {
+        return Settings.System.getIntForUser(mContext.getContentResolver(),
+        Settings.System.SYNTH_SMART_MEDIA, 1, UserHandle.USER_CURRENT) == 1;
+    }
+
+    private boolean isNowPlaying() {
+        return Dependency.get(NotificationMediaManager.class).isNowPlaying();
+    }
+
+    private void updateSmartMediaVisibilityAuto() {
+        if (!mSmartMediaOnAnimation) {
+            if ((getShowSmartMedia() && !mSmartMediaVisibility) && isNowPlaying()) {
+                if (mSmartMediaAutoShow != 0) {
+                    customHandler.removeCallbacks(setSmartMediaVisible);
+                    customHandler.removeCallbacks(setSmartMediaInvisible);
+                    customHandler.postDelayed(setSmartMediaVisible, mSmartMediaAutoShow * 1000);
+                }
+            } else if (mSmartMediaVisibility) {
+                if (mSmartMediaAutoHide != 0) {
+                    customHandler.removeCallbacks(setSmartMediaVisible);
+                    customHandler.removeCallbacks(setSmartMediaInvisible);
+                    customHandler.postDelayed(setSmartMediaInvisible, mSmartMediaAutoHide * 1000);
+                }
+            }
+        }
+    }
+
+    private void updateSmartMediaVisibility(boolean direction) {
+        mSmartMediaDirection = direction;
+        if (!mSmartMediaOnAnimation) {
+            if ((getShowSmartMedia() && !mSmartMediaVisibility) && isNowPlaying()) {
+                setSmartMediaVisible();
+            } else if (mSmartMediaVisibility) {
+                setSmartMediaInvisible();
+            }
+        }
+    }
+
+    private void updateSmartMedia() {
+        int titleFont = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_TITLE_FONT, 1, UserHandle.USER_CURRENT);
+        int artistFont = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_ARTIST_FONT, 1, UserHandle.USER_CURRENT);
+        boolean artworkBlur = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_ARTWORK_BLUR, 1, UserHandle.USER_CURRENT) == 1;
+        float artworkBlurRadius = (float) Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_ARTWORK_BLUR_RADIUS, 25, UserHandle.USER_CURRENT);
+        mSmartMediaAutoHide = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_AUTO_HIDE, 5, UserHandle.USER_CURRENT);
+        mSmartMediaAutoShow = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SMART_MEDIA_AUTO_SHOW, 0, UserHandle.USER_CURRENT);
+
+        mSmartMedia.setState(getShowSmartMedia());
+        mSmartMedia.setTitleFont(titleFont);
+        mSmartMedia.setArtistFont(artistFont);
+        mSmartMedia.setArtworkBlur(artworkBlur, artworkBlurRadius);
+        mSmartMedia.setRunnable(updateSmartMediaVisibilityAuto);
+    }
+
+    private void setSmartMediaVisible() {
+        mSmartMediaBottomInitial = mSmartMedia.getHeight();
+        mSmartMedia.setAlpha(0);
+        mSmartMedia.setTranslationX(mSmartMediaDirection ? -mSmartMedia.getWidth() : mSmartMedia.getWidth());
+        mSmartMedia.animate()
+                            .alpha(1)
+                            .translationX(0)
+                            .setUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                @Override
+                                public void onAnimationUpdate(ValueAnimator animation) {
+                                    mSmartMedia.getLayoutParams().height = (int) ((float) mSmartMediaBottom * animation.getAnimatedFraction());
+                                    mSmartMedia.requestLayout();
+                                }
+                            })
+                            .setDuration(SMART_MEDIA_ANIMATION_DURATION)
+                            .withStartAction(() -> mSmartMediaOnAnimation = true)
+                            .withEndAction(() -> {
+                                mSmartMediaVisibility = true;
+                                mSmartMediaOnAnimation = false;
+                                updateSmartMediaVisibilityAuto();
+                            })
+                            .start();
+        mSmallClockView.setAlpha(1);
+        mSmallClockView.setTranslationX(0);
+        mSmallClockView.animate()
+                            .alpha(0)
+                            .translationX(mSmartMediaDirection ? mSmallClockView.getWidth() : -mSmallClockView.getWidth())
+                            .setDuration(SMART_MEDIA_ANIMATION_DURATION)
+                            .start();
+    }
+
+    private void setSmartMediaInvisible() {
+        mSmartMedia.setAlpha(1);
+        mSmartMedia.setTranslationX(0);
+        mSmartMedia.setScaleY(1);
+        mSmartMedia.animate()
+                            .alpha(0)
+                            .translationX(mSmartMediaDirection ? mSmartMedia.getWidth() : -mSmartMedia.getWidth())
+                            .setUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                @Override
+                                public void onAnimationUpdate(ValueAnimator animation) {
+                                    mSmartMedia.getLayoutParams().height = mSmartMediaBottom - (int) ((float) mSmartMediaBottom * animation.getAnimatedFraction());
+                                    mSmartMedia.requestLayout();
+                                }
+                            })
+                            .setDuration(SMART_MEDIA_ANIMATION_DURATION)
+                            .withStartAction(() -> {
+                                mSmartMediaOnAnimation = true;
+                            })
+                            .withEndAction(() -> {
+                                mSmartMediaVisibility = false;
+                                mSmartMediaOnAnimation = false;
+                                updateSmartMediaVisibilityAuto();
+                            })
+                            .start();
+        mSmallClockView.setAlpha(0);
+        mSmallClockView.setTranslationX(mSmartMediaDirection ? -mSmallClockView.getWidth() : mSmallClockView.getWidth());
+        mSmallClockView.animate()
+                            .alpha(1)
+                            .translationX(0)
+                            .setDuration(SMART_MEDIA_ANIMATION_DURATION)
+                            .start();
+
+    }
+
+    private void setSmartMediaInvisibleImmediately() {
+        mSmartMedia.setAlpha(0);
+        mSmartMedia.setTranslationX(mSmartMediaDirection ? mSmartMedia.getWidth() : -mSmartMedia.getWidth());
+        mSmartMedia.getLayoutParams().height = mSmartMediaBottom - (int) ((float) mSmartMediaBottom * 1);
+        mSmartMedia.requestLayout();
+        mSmallClockView.setAlpha(1);
+        mSmallClockView.setTranslationX(0);
+        mSmartMediaVisibility = false;
+        mSmartMediaOnAnimation = false;
+        updateSmartMediaVisibilityAuto();
+
     }
 
     @Override
@@ -816,4 +1035,71 @@ public class KeyguardStatusView extends GridLayout implements
         }
     }
 
+    
+    class OnSwipeTouchListener implements OnTouchListener {
+
+        private final GestureDetector gestureDetector;
+    
+        public OnSwipeTouchListener (Context context){
+            gestureDetector = new GestureDetector(context, new GestureListener());
+        }
+    
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+    
+        private final class GestureListener extends SimpleOnGestureListener {
+    
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+    
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                boolean result = false;
+                try {
+                    float diffY = e2.getY() - e1.getY();
+                    float diffX = e2.getX() - e1.getX();
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                            result = true;
+                        }
+                    }
+                    else if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffY > 0) {
+                            onSwipeBottom();
+                        } else {
+                            onSwipeTop();
+                        }
+                        result = true;
+                    }
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                return result;
+            }
+        }
+    
+        public void onSwipeRight() {
+        }
+    
+        public void onSwipeLeft() {
+        }
+    
+        public void onSwipeTop() {
+        }
+    
+        public void onSwipeBottom() {
+        }
+    }
 }

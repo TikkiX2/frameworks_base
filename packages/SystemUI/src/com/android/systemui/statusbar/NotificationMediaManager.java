@@ -387,6 +387,14 @@ public class NotificationMediaManager implements Dumpable, TunerService.Tunable,
         return mMediaNotificationKey;
     }
 
+    public MediaDataManager getMediaDataManager() {
+        return mMediaDataManager;
+    }
+
+    public MediaArtworkProcessor getMediaArtworkProcessor() {
+        return mMediaArtworkProcessor;
+    }
+
     public MediaMetadata getMediaMetadata() {
         return mMediaMetadata;
     }
@@ -581,6 +589,11 @@ public class NotificationMediaManager implements Dumpable, TunerService.Tunable,
             return false;
         }
         return a.controlsSameSession(b);
+    }
+
+    public boolean isNowPlaying() {
+        return getMediaControllerPlaybackState(mMediaController) == PlaybackState.STATE_PLAYING ||
+                    getMediaControllerPlaybackState(mMediaController) == PlaybackState.STATE_PAUSED;
     }
 
     private int getMediaControllerPlaybackState(MediaController controller) {

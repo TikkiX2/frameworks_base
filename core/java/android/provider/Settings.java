@@ -5837,6 +5837,46 @@ public final class Settings {
         public static final String LOCK_OWNER_INFO_POSITION = "lock_owner_info_position";
 
         /**
+        * Show Synth Smart Media in keyguard
+        * by.tikkiX2
+        * @hide
+        */
+        public static final String SYNTH_SMART_MEDIA = "synth_smart_media";
+
+        /**
+        * Synth Smart Media Title Font
+        * @hide
+        */
+        public static final String SMART_MEDIA_TITLE_FONT = "smart_media_title_font";
+
+        /**
+        * Synth Smart Media Artist Font
+        * @hide
+        */
+        public static final String SMART_MEDIA_ARTIST_FONT = "smart_media_artist_font";
+
+        /**
+        * Hide Synth Smart Media after a while
+        * by.tikkiX2
+        * @hide
+        */
+        public static final String SMART_MEDIA_AUTO_HIDE = "smart_media_auto_hide";
+
+        /**
+        * Show Synth Smart Media after a while
+        * by.tikkiX2
+        * @hide
+        */
+        public static final String SMART_MEDIA_AUTO_SHOW = "smart_media_auto_show";
+
+        /**
+        * Synth Smart Media Artwork Blur
+        * @hide
+        */
+        public static final String SMART_MEDIA_ARTWORK_BLUR = "smart_media_artwork_blur";
+        public static final String SMART_MEDIA_ARTWORK_BLUR_RADIUS = "smart_media_artwork_blur_radius";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
