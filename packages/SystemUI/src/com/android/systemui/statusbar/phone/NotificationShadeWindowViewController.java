@@ -32,6 +32,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.systemui.ExpandHelper;
@@ -416,7 +417,8 @@ public class NotificationShadeWindowViewController {
                         mView.getContext(), mView, expandHelperCallback,
                         dragDownCallback, mFalsingManager));
 
-        mDepthController.setRoot(mView);
+        ImageView backgroundBlur = (ImageView) mView.findViewById(R.id.background_blur);
+        mDepthController.setRoot(backgroundBlur);
         mNotificationPanelViewController.addExpansionListener(mDepthController);
     }
 

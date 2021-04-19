@@ -6064,6 +6064,36 @@ public final class Settings {
         public static final String VISUALIZER_CENTER_MIRRORED = "visualizer_center_mirrored";
 
         /**
+         * Quick Settings Background Blur
+         * @hide
+         */
+        public static final String QS_CUSTOM_BLUR = "qs_custom_blur";
+
+        /**
+         * Quick Settings Background Blur Type
+         * @hide
+         */
+        public static final String QS_CUSTOM_BLUR_TYPE = "qs_custom_blur_type";
+
+        /**
+         * Quick Settings Background Blur Custom Color
+         * @hide
+         */
+        public static final String QS_CUSTOM_BLUR_COLOR = "qs_custom_blur_color";
+
+        /**
+         * Quick Settings Background Blur Image
+         * @hide
+         */
+        public static final String QS_CUSTOM_BLUR_IMAGE = "qs_custom_blur_image";
+
+        /**
+         * Quick Settings Background Blur Radius
+         * @hide
+         */
+        public static final String QS_CUSTOM_BLUR_RADIUS = "qs_custom_blur_image";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *

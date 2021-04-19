@@ -25,6 +25,14 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
+    <ImageView
+        android:id="@+id/background_blur"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="@*android:color/accent_device_default_light"
+        sysui:ignoreRightInset="true" />
+
     <com.android.systemui.statusbar.BackDropView
             android:id="@+id/backdrop"
             android:layout_width="match_parent"

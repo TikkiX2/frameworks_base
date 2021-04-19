@@ -81,6 +81,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.ContentObserver;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -119,6 +120,7 @@ import android.util.EventLog;
 import android.util.Log;
 import android.util.MathUtils;
 import android.util.Slog;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.HapticFeedbackConstants;
 import android.view.IWindowManager;
@@ -158,6 +160,7 @@ import com.android.internal.logging.UiEventLoggerImpl;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
 import com.android.internal.statusbar.IStatusBarService;
 import com.android.internal.statusbar.RegisterStatusBarResult;
+import com.android.internal.util.ImageUtils;
 import com.android.internal.view.AppearanceRegion;
 import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.keyguard.KeyguardUpdateMonitorCallback;
@@ -226,6 +229,7 @@ import com.android.systemui.statusbar.NotificationRemoteInputManager;
 import com.android.systemui.statusbar.NotificationShadeDepthController;
 import com.android.systemui.statusbar.NotificationShelf;
 import com.android.systemui.statusbar.NotificationViewHierarchyManager;
+import com.android.systemui.statusbar.MediaArtworkProcessor;
 import com.android.systemui.statusbar.PulseExpansionHandler;
 import com.android.systemui.statusbar.ScrimView;
 import com.android.systemui.statusbar.StatusBarState;
@@ -267,6 +271,7 @@ import com.android.systemui.statusbar.policy.RemoteInputQuickSettingsDisabler;
 import com.android.systemui.statusbar.policy.TaskHelper;
 import com.android.systemui.statusbar.policy.UserInfoControllerImpl;
 import com.android.systemui.statusbar.policy.UserSwitcherController;
+import com.android.systemui.synth.QSCustomBlur;
 import com.android.systemui.tuner.TunerService;
 import com.android.systemui.volume.VolumeComponent;
 
@@ -564,6 +569,9 @@ public class StatusBar extends SystemUI implements DemoMode,
 
     private ImageButton mDismissAllButton;
     public boolean mClearableNotifications = true;
+
+    private QSCustomBlur mQSCustomBlur;
+    private ImageView mCustomBlurView;
 
     // ensure quick settings is disabled until the current user makes it through the setup wizard
     @VisibleForTesting
@@ -1211,6 +1219,9 @@ public class StatusBar extends SystemUI implements DemoMode,
         mMaximumBacklight = pm.getBrightnessConstraint(
                 PowerManager.BRIGHTNESS_CONSTRAINT_TYPE_MAXIMUM);
 
+        mCustomBlurView = mNotificationShadeWindowView.findViewById(R.id.background_blur);
+        mQSCustomBlur = new QSCustomBlur(mContext, mCustomBlurView, mMediaManager, mNotificationPanelViewController);
+
         // TODO: Deal with the ugliness that comes from having some of the statusbar broken out
         // into fragments, but the rest here, it leaves some awkward lifecycle and whatnot.
         mStackScroller = mNotificationShadeWindowView.findViewById(
@@ -1634,6 +1645,10 @@ public class StatusBar extends SystemUI implements DemoMode,
 
     public View getDismissAllButton() {
         return mDismissAllButton;
+    }
+
+    public void updateBlurVisibility() {
+        if (mQSCustomBlur != null) mQSCustomBlur.updateView(mIsKeyguard);
     }
 
     protected QS createDefaultQSFragment() {
@@ -4167,6 +4182,7 @@ public class StatusBar extends SystemUI implements DemoMode,
     }
 
     boolean updateIsKeyguard() {
+        updateBlurVisibility();
         boolean wakeAndUnlocking = mBiometricUnlockController.getMode()
                 == BiometricUnlockController.MODE_WAKE_AND_UNLOCK;
 
@@ -4724,10 +4740,13 @@ public class StatusBar extends SystemUI implements DemoMode,
             entry.setGroupExpansionChanging(true);
             userId = entry.getSbn().getUserId();
         }
-        boolean fullShadeNeedsBouncer = !mLockscreenUserManager.
+
+        boolean showSynthSmartMedia = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.SYNTH_SMART_MEDIA, 1, UserHandle.USER_CURRENT) == 1;
+        boolean fullShadeNeedsBouncer = (!mLockscreenUserManager.
                 userAllowsPrivateNotificationsInPublic(mLockscreenUserManager.getCurrentUserId())
                 || !mLockscreenUserManager.shouldShowLockscreenNotifications()
-                || mFalsingManager.shouldEnforceBouncer();
+                || mFalsingManager.shouldEnforceBouncer()) && !showSynthSmartMedia;
         if (mKeyguardBypassController.getBypassEnabled()) {
             fullShadeNeedsBouncer = false;
         }
