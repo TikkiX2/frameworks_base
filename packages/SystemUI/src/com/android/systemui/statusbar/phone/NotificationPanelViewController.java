@@ -909,7 +909,7 @@ public class NotificationPanelViewController extends PanelViewController {
                     mNotificationStackScroller.getIntrinsicContentHeight(), getExpandedFraction(),
                     totalHeight, (int) (mKeyguardStatusView.getHeight() - mShelfHeight / 2.0f
                             - mDarkIconSize / 2.0f), clockPreferredY, hasCustomClock(),
-                    hasVisibleNotifications, mInterpolatedDarkAmount, mEmptyDragAmount,
+                    false, mInterpolatedDarkAmount, mEmptyDragAmount,
                     bypassEnabled, getUnlockedStackScrollerPadding());
             mClockPositionAlgorithm.run(mClockPositionResult);
             PropertyAnimator.setProperty(mKeyguardStatusView, AnimatableProperty.X,
