@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2017 The Android Open Source Project
+<!-- Copyright (C) 2018 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -13,20 +13,10 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<LinearLayout
+<shape
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:systemui="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/quick_qs_status_icons"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingTop="@dimen/qs_header_top_padding"
-    android:paddingBottom="@dimen/qs_header_bottom_padding"
-    android:layout_below="@id/quick_status_bar_system_icons"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:minHeight="20dp"
-    android:clickable="false"
-    android:focusable="true"
-    android:theme="@style/QSHeaderTheme">
-
-</LinearLayout>
+    android:shape="rectangle" >
+    <solid
+        android:color="?attr/wallpaperTextColor" />
+    <corners android:radius="5dp" />
+</shape>

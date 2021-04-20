@@ -122,6 +122,7 @@ import android.util.MathUtils;
 import android.util.Slog;
 import android.util.TypedValue;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.IWindowManager;
 import android.view.InsetsState.InternalInsetsType;
@@ -146,10 +147,13 @@ import android.widget.ImageButton;
 import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
+
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.colorextraction.ColorExtractor;
@@ -272,6 +276,7 @@ import com.android.systemui.statusbar.policy.TaskHelper;
 import com.android.systemui.statusbar.policy.UserInfoControllerImpl;
 import com.android.systemui.statusbar.policy.UserSwitcherController;
 import com.android.systemui.synth.QSCustomBlur;
+import com.android.systemui.synth.ambient.AmbientController;
 import com.android.systemui.tuner.TunerService;
 import com.android.systemui.volume.VolumeComponent;
 
@@ -569,9 +574,16 @@ public class StatusBar extends SystemUI implements DemoMode,
 
     private ImageButton mDismissAllButton;
     public boolean mClearableNotifications = true;
+    public float mQsExpansionFraction = 0f;
 
     private QSCustomBlur mQSCustomBlur;
     private ImageView mCustomBlurView;
+
+    private AmbientController mAmbientController;
+    private ImageView mAmbientImageView;
+    private TextView mAmbientTextView;
+    private FrameLayout mAmbientContainer;
+    private ConstraintLayout mAmbientTextContainer;
 
     // ensure quick settings is disabled until the current user makes it through the setup wizard
     @VisibleForTesting
@@ -1222,6 +1234,12 @@ public class StatusBar extends SystemUI implements DemoMode,
         mCustomBlurView = mNotificationShadeWindowView.findViewById(R.id.background_blur);
         mQSCustomBlur = new QSCustomBlur(mContext, mCustomBlurView, mMediaManager, mNotificationPanelViewController);
 
+        mAmbientContainer = mNotificationShadeWindowView.findViewById(R.id.ambient_container);
+        mAmbientImageView = mNotificationShadeWindowView.findViewById(R.id.ambient_image);
+        mAmbientTextContainer = mNotificationShadeWindowView.findViewById(R.id.ambient_text_container);
+        mAmbientTextView = mNotificationShadeWindowView.findViewById(R.id.ambient_text);
+        mAmbientController = new AmbientController(context, mAmbientContainer, mAmbientImageView, mAmbientTextContainer, mAmbientTextView, mNotificationPanelViewController);
+
         // TODO: Deal with the ugliness that comes from having some of the statusbar broken out
         // into fragments, but the rest here, it leaves some awkward lifecycle and whatnot.
         mStackScroller = mNotificationShadeWindowView.findViewById(
@@ -1604,17 +1622,52 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
     }
 
+    private int getDismissAllButtonGravity() {
+        return Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.CLEAR_ALL_BUTTON_GRAVITY, 1, UserHandle.USER_CURRENT);
+    }
+
+    public void setQsExpansionFraction(float value) {
+        mQsExpansionFraction = value;
+        updateDismissAllVisibility(true);
+    }
+
     public void updateDismissAllVisibility(boolean visible) {
         if (mClearableNotifications && mState != StatusBarState.KEYGUARD && visible && !mQSPanel.isExpanded()) {
             mDismissAllButton.setVisibility(View.VISIBLE);
             int DismissAllAlpha = Math.round(255.0f * mNotificationPanelViewController.getExpandedFraction());
             mDismissAllButton.setAlpha(DismissAllAlpha);
             mDismissAllButton.getBackground().setAlpha(DismissAllAlpha);
+            mDismissAllButton.setRotation(Math.round(180.0f * mNotificationPanelViewController.getExpandedFraction()));
+            mDismissAllButton.setTranslationY(MathUtils.lerp(-500f, 0f, mNotificationPanelViewController.getExpandedFraction()));
+        } else if (mClearableNotifications && mState != StatusBarState.KEYGUARD && visible && mQsExpansionFraction != 0) {
+            float fraction = MathUtils.lerp(1f, 0f, mQsExpansionFraction);
+            mDismissAllButton.setVisibility(View.VISIBLE);
+            mDismissAllButton.setAlpha(Math.round(255.0f * fraction));
+            mDismissAllButton.getBackground().setAlpha(Math.round(255.0f * fraction));
+            mDismissAllButton.setRotation(Math.round(180.0f * mQsExpansionFraction));
+            mDismissAllButton.setTranslationY(MathUtils.lerp(0f, 100f, mQsExpansionFraction));
         } else {
             mDismissAllButton.setAlpha(0);
             mDismissAllButton.getBackground().setAlpha(0);
+            mDismissAllButton.setRotation(0);
+            mDismissAllButton.setTranslationY(0f);
             mDismissAllButton.setVisibility(View.INVISIBLE);
         }
+
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mDismissAllButton.getLayoutParams();
+        switch (getDismissAllButtonGravity()) {
+            case 0:
+                lp.gravity = Gravity.LEFT|Gravity.BOTTOM;
+                break;
+            case 1:
+                lp.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+                break;
+            case 2:
+                lp.gravity = Gravity.RIGHT|Gravity.BOTTOM;
+                break;
+        }
+        mDismissAllButton.setLayoutParams(lp);
     }
 
     public void updateDismissAllButton(int iconcolor) {
@@ -4469,6 +4522,7 @@ public class StatusBar extends SystemUI implements DemoMode,
 
         mNotificationPanelViewController.setDozing(mDozing, animate, mWakeUpTouchLocation);
         mPulseController.setDozing(mDozing);
+        mAmbientController.setDozing(mDozing);
         updateQsExpansionEnabled();
 
         if (mAmbientIndicationContainer != null) {
@@ -4609,6 +4663,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         updateScrimController();
         mPresenter.updateMediaMetaData(false, mState != StatusBarState.KEYGUARD);
         mPulseController.setKeyguardShowing(mState == StatusBarState.KEYGUARD);
+        mAmbientController.setKeyguardShowing(mState == StatusBarState.KEYGUARD);
         updateKeyguardState();
     
         ((StatusBarIconControllerImpl) mIconController).setKeyguardShowing(mState == StatusBarState.KEYGUARD);
@@ -4628,6 +4683,10 @@ public class StatusBar extends SystemUI implements DemoMode,
 
     public PulseController getPulseController() {
         return mPulseController;
+    }
+
+    public AmbientController getAmbientController() {
+        return mAmbientController;
     }
 
     @Override

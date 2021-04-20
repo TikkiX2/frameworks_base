@@ -37,6 +37,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.UserHandle;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,7 +81,7 @@ public class QSCustomBlur {
 
     private void setColorAccentBlur() {
         MediaArtworkProcessor artworkProcessor = mMediaManager.getMediaArtworkProcessor();
-        Bitmap bm = tintBitmap(getBitmap(R.drawable.rounded), getAccentColor());
+        Bitmap bm = tintBitmap(getBitmap(R.drawable.qs_bg_blur), getAccentColor());
         Bitmap bmBlur = artworkProcessor.processArtwork(mContext, bm, (int) ((float) getBlurRadius() * mNotificationPanelViewController.getExpandedFraction()));
         mCustomBlurView.setImageBitmap(bmBlur);
     }
@@ -95,9 +96,10 @@ public class QSCustomBlur {
     }
     
     private Bitmap getBitmap(int drawableRes) {
+        DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
         Drawable drawable = mContext.getResources().getDrawable(drawableRes);
         Canvas canvas = new Canvas();
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(dm.widthPixels, dm.heightPixels, Bitmap.Config.ARGB_8888);
         canvas.setBitmap(bitmap);
         drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
         drawable.draw(canvas);

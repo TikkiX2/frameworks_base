@@ -899,17 +899,17 @@ public class NotificationPanelViewController extends PanelViewController {
         } else {
             int totalHeight = mView.getHeight();
             int bottomPadding = Math.max(mIndicationBottomPadding, mAmbientIndicationBottomPadding);
-            int clockPreferredY = mKeyguardStatusView.getClockPreferredY(totalHeight);
+            int clockPreferredY = (int) mKeyguardStatusView.getClockPreferredY(totalHeight);
             boolean bypassEnabled = mKeyguardBypassController.getBypassEnabled();
             final boolean
                     hasVisibleNotifications =
-                    !bypassEnabled && mNotificationStackScroller.getVisibleNotificationCount() != 0;
+                    !bypassEnabled && mNotificationStackScroller.isVisibleNotification();
             mKeyguardStatusView.setHasVisibleNotifications(hasVisibleNotifications);
             mClockPositionAlgorithm.setup(mStatusBarMinHeight, totalHeight - bottomPadding,
                     mNotificationStackScroller.getIntrinsicContentHeight(), getExpandedFraction(),
                     totalHeight, (int) (mKeyguardStatusView.getHeight() - mShelfHeight / 2.0f
                             - mDarkIconSize / 2.0f), clockPreferredY, hasCustomClock(),
-                    false, mInterpolatedDarkAmount, mEmptyDragAmount,
+                    hasVisibleNotifications, mInterpolatedDarkAmount, mEmptyDragAmount,
                     bypassEnabled, getUnlockedStackScrollerPadding());
             mClockPositionAlgorithm.run(mClockPositionResult);
             PropertyAnimator.setProperty(mKeyguardStatusView, AnimatableProperty.X,
@@ -1837,6 +1837,7 @@ public class NotificationPanelViewController extends PanelViewController {
         mQs.setQsExpansion(qsExpansionFraction, getHeaderTranslation());
         mMediaHierarchyManager.setQsExpansion(qsExpansionFraction);
         mNotificationStackScroller.setQsExpansionFraction(qsExpansionFraction);
+        mStatusBar.setQsExpansionFraction(qsExpansionFraction);
         reTickerViewVisibility();
     }
 
@@ -2251,6 +2252,7 @@ public class NotificationPanelViewController extends PanelViewController {
         mStatusBar.updateBlurVisibility();
         mStatusBar.updateDismissAllVisibility(true);
         mStatusBar.getPulseController().setQSShowing(mBarState != StatusBarState.KEYGUARD && !isFullyCollapsed());
+        mStatusBar.getAmbientController().setQSShowing(mBarState != StatusBarState.KEYGUARD && !isFullyCollapsed());
     }
 
     private float getFadeoutAlpha() {
@@ -3073,6 +3075,9 @@ public class NotificationPanelViewController extends PanelViewController {
                 Settings.System.AMBIENT_LIGHT_PULSE_FOR_ALL, 0, UserHandle.USER_CURRENT) == 1;
         int repeats = Settings.System.getIntForUser(resolver,
                 Settings.System.NOTIFICATION_PULSE_REPEATS, 0, UserHandle.USER_CURRENT);
+        boolean hideAodContent = Settings.System.getIntForUser(resolver,
+                Settings.System.AMBIENT_HIDE_KEYGUARD, 0, UserHandle.USER_CURRENT) == 1;
+        boolean ambientState = mStatusBar.getAmbientController().getState();
         if (animatePulse) {
             mAnimateNextPositionUpdate = true;
         }
@@ -3122,14 +3127,14 @@ public class NotificationPanelViewController extends PanelViewController {
                                 UserHandle.USER_CURRENT);
                     }
                 } else {
-                    showAodContent(true);
+                    updateAodContent(ambientState && hideAodContent, true);
                 }
             } else {
                 // continue to pulse - if not screen was turned on in the meantime
                 if (activeNotif && ambientLights && aodEnabled && mDozing && !mPulseLightHandled) {
                     // no-op if pulseLights is also enabled
                     if (ambientLightsHideAod) {
-                        showAodContent(false);
+                        updateAodContent(ambientState && hideAodContent, false);
                     }
                     mPulseLightsView.animateNotificationWithColor(pulseColor);
                     mPulseLightsView.setVisibility(View.VISIBLE);
@@ -3151,6 +3156,10 @@ public class NotificationPanelViewController extends PanelViewController {
         }
         mNotificationStackScroller.setPulsing(pulsing, animatePulse);
         mKeyguardStatusView.setPulsing(pulsing);
+    }
+
+    public void updateAodContent(boolean hideAodContent, boolean pulse) {
+        showAodContent(hideAodContent ? false : pulse);
     }
 
     private void showAodContent(boolean show) {

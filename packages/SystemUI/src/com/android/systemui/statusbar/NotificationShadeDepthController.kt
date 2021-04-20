@@ -108,6 +108,8 @@ class NotificationShadeDepthController @Inject constructor(
                 else 0)
         }
 
+    private var userBlurRadius: Int = 0
+
     /**
      * When launching an app from the shade, the animations progress should affect how blurry the
      * shade is, overriding the expansion amount.
@@ -267,6 +269,8 @@ class NotificationShadeDepthController @Inject constructor(
         }
         shadeAnimation.setStiffness(SpringForce.STIFFNESS_LOW)
         shadeAnimation.setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY)
+        
+        userBlurRadius = notificationShadeWindowController.getUserBlurRadius()
     }
 
     fun addListener(listener: DepthListener) {
@@ -377,7 +381,7 @@ class NotificationShadeDepthController @Inject constructor(
     private fun updateShadeBlur() {
         var newBlur = 0
         if (isOnKeyguardNotDismissing() || isOnKeyguardDismissingAndSecure()) {
-            newBlur = blurUtils.blurRadiusOfRatio(shadeExpansion)
+            if (userBlurRadius == 0) newBlur = blurUtils.blurRadiusOfRatio(shadeExpansion) else newBlur = MathUtils.lerp(blurUtils.minBlurRadius.toFloat(), userBlurRadius.toFloat(), shadeExpansion).toInt()
         }
         shadeSpring.animateTo(newBlur)
     }

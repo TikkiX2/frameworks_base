@@ -93,13 +93,14 @@
     <FrameLayout
         android:id="@+id/qs_drag_handle_view"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/qs_footer_height"
         android:layout_gravity="center_horizontal"
         android:elevation="4dp"
-        android:paddingBottom="5dp">
+        android:paddingBottom="0dp">
         <View
             android:layout_width="46dp"
             android:layout_height="3dp"
+            android:layout_gravity="center"
             android:background="@drawable/qs_footer_drag_handle" />
     </FrameLayout>
 

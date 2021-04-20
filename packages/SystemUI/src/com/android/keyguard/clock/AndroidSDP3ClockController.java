@@ -33,13 +33,10 @@ import android.icu.text.DateFormat;
 import android.icu.text.DisplayContext;
 import android.net.Uri;
 import android.text.Html;
-import android.transition.AutoTransition;
 import android.transition.ChangeBounds;
 import android.transition.Fade;
 import android.transition.Transition;
 import android.transition.TransitionManager;
-import android.transition.TransitionSet;
-import android.util.MathUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -59,7 +56,6 @@ import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
 
 import com.android.systemui.keyguard.KeyguardSliceProvider;
-import com.android.systemui.synth.transition.Scale;
 import com.android.keyguard.KeyguardSliceView.KeyguardSliceTextView;
 import com.android.keyguard.KeyguardSliceView.Row;
 
@@ -91,16 +87,12 @@ import static com.android.systemui.statusbar.phone
 /**
  * Plugin for the default clock face used only to provide a preview.
  */
-public class AndroidSClockController implements ClockPlugin {
+public class AndroidSDP3ClockController implements ClockPlugin {
 
     private final float mTextSizeNormal = 48f;
-    private final float mTextSizeBig = 96f;
     private final float mSliceTextSize = 24f;
     private final float mTitleTextSize = 28f;
-    private boolean mHasVisibleNotification = false;
-    private boolean mClockState = false;
-    private boolean mClockAnimating = false;
-    private float clockDividY = 6f;
+    private float clockDividY = 5f;
 
     /**
      * Resources used to get title and thumbnail.
@@ -126,16 +118,12 @@ public class AndroidSClockController implements ClockPlugin {
      * Root view of clock.
      */
     private ClockLayout mView;
-    private ClockLayout mBigClockView;
 
     /**
      * Text clock in preview view hierarchy.
      */
     private TextClock mClock;
     private ConstraintLayout mContainer;
-    private ConstraintLayout mContainerBig;
-    private ConstraintSet mContainerSet = new ConstraintSet();
-    private ConstraintSet mContainerSetBig = new ConstraintSet();
 
     private Context mContext;
     
@@ -154,16 +142,9 @@ public class AndroidSClockController implements ClockPlugin {
 
     private int mTextColor;
     private float mDarkAmount = 0;
-    private int mRowHeight = 0;
-    private int mClockWidth = 0;
 
     private Typeface mSliceTypeface;
     private Typeface mClockTypeface;
-
-    /**
-     * Time and calendars to check the date
-     */
-    private final Calendar mTime = Calendar.getInstance(TimeZone.getDefault());
 
     /**
      * Create a DefaultClockController instance.
@@ -172,7 +153,7 @@ public class AndroidSClockController implements ClockPlugin {
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    public AndroidSClockController(Resources res, LayoutInflater inflater,
+    public AndroidSDP3ClockController(Resources res, LayoutInflater inflater,
             SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
@@ -185,21 +166,15 @@ public class AndroidSClockController implements ClockPlugin {
 
     private void createViews() {
         mView = (ClockLayout) mLayoutInflater
-                .inflate(R.layout.android_s_clock, null);
-        final ClockLayout viewBig = (ClockLayout) mLayoutInflater
-                .inflate(R.layout.android_s_big_clock, null);
+                .inflate(R.layout.android_s_dp3_clock, null);
         mClock = mView.findViewById(R.id.clock);
-        mContainer = mView.findViewById(R.id.clock_view);
-        mContainerBig = viewBig.findViewById(R.id.clock_view);
-        mContainerSet.clone(mContainer);
-        mContainerSetBig.clone(mContainerBig);
-        mClock.setFormat12Hour("hh\nmm");
-        mClock.setFormat24Hour("kk\nmm");
-        mClockWidth = mClock.getWidth();
+        mClock.setFormat12Hour("hh:mm");
+        mClock.setFormat24Hour("kk:mm");
         mClockTypeface = mClock.getTypeface();
 
         mTitle = mView.findViewById(R.id.title);
         mRow = mView.findViewById(R.id.row);
+
         mIconSize = (int) mContext.getResources().getDimension(R.dimen.widget_icon_size);
         mIconSizeWithHeader = (int) mContext.getResources().getDimension(R.dimen.header_icon_size);
         mRowTextSize = mContext.getResources().getDimensionPixelSize(
@@ -213,17 +188,18 @@ public class AndroidSClockController implements ClockPlugin {
     public void onDestroyView() {
         mView = null;
         mClock = null;
-        mContainer = null;
+        mTitle = null;
+        mRow = null;
     }
 
     @Override
     public String getName() {
-        return "android_s";
+        return "android_s_dp3";
     }
 
     @Override
     public String getTitle() {
-        return mResources.getString(R.string.clock_title_android_s);
+        return mResources.getString(R.string.clock_title_android_s_dp3);
     }
 
     @Override
@@ -234,7 +210,7 @@ public class AndroidSClockController implements ClockPlugin {
     @Override
     public Bitmap getPreview(int width, int height) {
 
-        View previewView = mLayoutInflater.inflate(R.layout.android_s_clock, null);
+        View previewView = mLayoutInflater.inflate(R.layout.android_s_dp3_clock, null);
         TextClock previewClock = mView.findViewById(R.id.clock);
         previewClock.setFormat12Hour("hh\nmm");
         previewClock.setFormat24Hour("kk\nmm");
@@ -257,7 +233,7 @@ public class AndroidSClockController implements ClockPlugin {
 
     @Override
     public int getPreferredY(int totalHeight) {
-        return (int) (totalHeight / clockDividY);
+        return CLOCK_USE_DEFAULT_Y;
     }
 
     @Override
@@ -355,7 +331,6 @@ public class AndroidSClockController implements ClockPlugin {
             }
 
             if (mSliceTypeface != null) button.setTypeface(mSliceTypeface);
-            // button.setVisibility(isDateSlice ? View.GONE : View.VISIBLE);
 
             LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) button.getLayoutParams();
             layoutParams.height = LinearLayout.LayoutParams.WRAP_CONTENT;
@@ -402,7 +377,6 @@ public class AndroidSClockController implements ClockPlugin {
         mTitle.requestLayout();
         mRow.requestLayout();
 
-        mRowHeight = mRow.getHeight() + (mHasHeader ? mTitle.getHeight() : 0);
     };
 
     /**
@@ -410,43 +384,6 @@ public class AndroidSClockController implements ClockPlugin {
      */
     @Override
     public void setHasVisibleNotifications(boolean hasVisibleNotifications) {
-        if (hasVisibleNotifications == mHasVisibleNotification) {
-            return;
-        }
-        mHasVisibleNotification = hasVisibleNotifications;
-        animate();
-    }
-
-    private void animate() {
-        mClock.clearAnimation();
-        if (!mHasVisibleNotification) {
-            mClockWidth = mClock.getWidth();
-            ValueAnimator animatorTextSizeNoNotification = ValueAnimator.ofFloat(mTextSizeNormal, mTextSizeBig);
-            animatorTextSizeNoNotification.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    mClock.setTextSize((float) Converter.dpToPx(mContext, (int) ((float) animation.getAnimatedValue())));
-                    mContainerSet.setHorizontalBias(mClock.getId(), MathUtils.lerp(1f, 0.5f, animation.getAnimatedFraction()));
-                    mContainerSet.setMargin(mTitle.getId(), ConstraintSet.END, ((int) MathUtils.lerp(mClockWidth, 0f, animation.getAnimatedFraction())));
-                    mContainerSet.setMargin(mRow.getId(), ConstraintSet.END, ((int) MathUtils.lerp(mClockWidth, 0f, animation.getAnimatedFraction())));
-                    if (mRow.getChildCount() != 0) mContainerSet.setMargin(mClock.getId(), ConstraintSet.TOP, ((int) MathUtils.lerp(0f, mRowHeight, animation.getAnimatedFraction())));
-                    mContainerSet.applyTo(mContainer);
-                }
-            });
-            animatorTextSizeNoNotification.start();
-        } else {
-            ValueAnimator animatorTextSizeNotification = ValueAnimator.ofFloat(mTextSizeBig, mTextSizeNormal);
-            animatorTextSizeNotification.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    mClock.setTextSize((float) Converter.dpToPx(mContext, (int) ((float) animation.getAnimatedValue())));
-                    mContainerSet.setHorizontalBias(mClock.getId(), MathUtils.lerp(0.5f, 1f, animation.getAnimatedFraction()));
-                    mContainerSet.setMargin(mTitle.getId(), ConstraintSet.END, ((int) MathUtils.lerp(0f, mClockWidth, animation.getAnimatedFraction())));
-                    mContainerSet.setMargin(mRow.getId(), ConstraintSet.END, ((int) MathUtils.lerp(0f, mClockWidth, animation.getAnimatedFraction())));
-                    if (mRow.getChildCount() != 0) mContainerSet.setMargin(mClock.getId(), ConstraintSet.TOP, ((int) MathUtils.lerp(mRowHeight, 0f, animation.getAnimatedFraction())));
-                    mContainerSet.applyTo(mContainer);
-                }
-            });
-            animatorTextSizeNotification.start();
-        }
     }
 
     @Override

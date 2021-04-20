@@ -44,6 +44,7 @@ import android.widget.TextView;
 import androidx.core.graphics.ColorUtils;
 
 import com.android.internal.widget.LockPatternUtils;
+import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.Interpolators;
@@ -184,7 +185,12 @@ public class KeyguardStatusView extends GridLayout implements
      * Set whether or not the lock screen is showing notifications.
      */
     public void setHasVisibleNotifications(boolean hasVisibleNotifications) {
-        mClockView.setHasVisibleNotifications(hasVisibleNotifications);
+        boolean showIconsLockScreen = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.AMBIENT_ICONS_LOCKSCREEN,
+                0, UserHandle.USER_CURRENT) != 0;
+        mClockView.setHasVisibleNotifications(hasVisibleNotifications && !showIconsLockScreen);
+        mSmartMediaManager.setHasVisibleNotifications((hasVisibleNotifications && !showIconsLockScreen) && mDarkAmount == 0f);
+        mKeyguardSlice.refresh();
     }
 
     private void setEnableMarquee(boolean enabled) {
@@ -214,6 +220,9 @@ public class KeyguardStatusView extends GridLayout implements
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
+        PluginManager manager = Dependency.get(PluginManager.class);
+        SysuiColorExtractor colorExtractor = Dependency.get(SysuiColorExtractor.class);
+
         mStatusViewContainer = findViewById(R.id.status_view_container);
         mLogoutView = findViewById(R.id.logout);
         mNotificationIcons = findViewById(R.id.clock_notification_icon_container);
@@ -229,6 +238,8 @@ public class KeyguardStatusView extends GridLayout implements
 
         mWeatherView = (CurrentWeatherView) findViewById(R.id.weather_container);
         mTextColor = mClockView.getCurrentTextColor();
+
+        mSmartMediaManager = new SmartMediaManager(mContext, manager, colorExtractor, this);
 
         boolean shouldMarquee = Dependency.get(KeyguardUpdateMonitor.class).isDeviceInteractive();
         setEnableMarquee(shouldMarquee);
@@ -684,6 +695,7 @@ public class KeyguardStatusView extends GridLayout implements
         }
         mDarkAmount = darkAmount;
         mClockView.setDarkAmount(darkAmount);
+        mSmartMediaManager.setDarkAmount(darkAmount);
         updateDark();
     }
 

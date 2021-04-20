@@ -28,10 +28,12 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.os.Trace;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -218,6 +220,10 @@ public class NotificationShadeWindowController implements Callback, Dumpable,
 
     public ViewGroup getNotificationShadeView() {
         return mNotificationShadeView;
+    }
+
+    public int getUserBlurRadius() {
+        return Settings.System.getInt(mContext.getContentResolver(), Settings.System.QS_BLUR_RADIUS, 25);
     }
 
     public void setDozeScreenBrightness(int value) {

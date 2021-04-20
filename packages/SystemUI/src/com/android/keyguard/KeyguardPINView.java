@@ -17,14 +17,23 @@
 package com.android.keyguard;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.AsyncTask;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
+
+import androidx.core.graphics.ColorUtils;
 
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockPatternUtils.RequestThrottledException;
@@ -61,6 +70,15 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
     private final int userId = KeyguardUpdateMonitor.getCurrentUser();
 
     private static List<Integer> sNumbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 0);
+
+    private GradientDrawable mShapeBackground = new GradientDrawable();
+    private GradientDrawable mAccentDrawable = new GradientDrawable();
+    private RippleDrawable mRipple;
+    private LayerDrawable mLayerBackground;
+
+    private int mAccent;
+    private int mColorBackground;
+    private int mColorControlHighlight;
 
     public KeyguardPINView(Context context) {
         this(context, null);
@@ -177,6 +195,18 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
             mPasswordEntry.setQuickUnlockListener(null);
         }
         setButtonVisibility(getOkButton(), !quickUnlock);
+
+        LinearLayout container = (LinearLayout) findViewById(R.id.container);
+        int finished = 0;
+        for (int i = 0; i < container.getChildCount(); i++) {
+            if (container.getChildAt(i) instanceof LinearLayout) {
+                LinearLayout nestedLayout = ((LinearLayout) container.getChildAt(i));
+                for (int j = 0; j < nestedLayout.getChildCount(); j++){
+                    View view = nestedLayout.getChildAt(j);
+                    view.setBackground(getBackgroundDrawable());
+                }
+            }
+        }
     }
 
     @Override
@@ -199,7 +229,7 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
                 new Runnable() {
                     @Override
                     public void run() {
-                        enableClipping(true);
+                        enableClipping(false);
                     }
                 });
     }
@@ -218,7 +248,7 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
                 new Runnable() {
                     @Override
                     public void run() {
-                        enableClipping(true);
+                        enableClipping(false);
                         if (finishRunnable != null) {
                             finishRunnable.run();
                         }
@@ -291,5 +321,42 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
             // do nothing
         }
         return pinPasswordLength >= 4 ? pinPasswordLength : -1;
+    }
+
+    private Drawable getBackgroundDrawable() {
+        final TypedValue accentValue = new TypedValue();
+        mContext.getTheme().resolveAttribute(android.R.attr.colorAccent, accentValue, true);
+        mAccent = (int) accentValue.data;
+        
+        final TypedValue colorBackgroundValue = new TypedValue();
+        mContext.getTheme().resolveAttribute(android.R.attr.colorBackgroundFloating, colorBackgroundValue, true);
+        mColorBackground = (int) colorBackgroundValue.data;
+        
+        final TypedValue colorControlHighlightValue = new TypedValue();
+        mContext.getTheme().resolveAttribute(android.R.attr.colorControlHighlight, colorControlHighlightValue, true);
+        mColorControlHighlight = (int) colorControlHighlightValue.data;
+
+        mShapeBackground.setCornerRadius(120f);
+        int size = mContext.getResources().getDimensionPixelSize(
+                R.dimen.num_pad_size);
+        mShapeBackground.setSize(size, size);
+        mShapeBackground.setColor(mColorBackground);
+
+        mAccentDrawable.setCornerRadius(120f);
+        mAccentDrawable.setSize(size, size);
+        mAccentDrawable.setColor(ColorUtils.setAlphaComponent(mAccent, 165));
+        mAccentDrawable.setAlpha(165);
+
+        mRipple = new RippleDrawable(ColorStateList.valueOf(mAccent), null, mAccentDrawable);
+        mShapeBackground.setColor(mColorBackground);
+        mLayerBackground = new LayerDrawable(new Drawable[]{mShapeBackground, mAccentDrawable, mRipple});
+        mLayerBackground.setLayerSize(0, size, size);
+        mLayerBackground.setLayerSize(1, size, size);
+        mLayerBackground.setLayerSize(2, size, size);
+        mLayerBackground.setLayerGravity(0, Gravity.CENTER);
+        mLayerBackground.setLayerGravity(1, Gravity.CENTER);
+        mLayerBackground.setLayerGravity(2, Gravity.CENTER);
+
+        return mLayerBackground;
     }
 }

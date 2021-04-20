@@ -5483,6 +5483,24 @@ public final class Settings {
                 "status_bar_file_header_image";
 
         /**
+         * @hide
+         */
+        public static final String STATUS_BAR_CUSTOM_HEADER_TINT =
+                "status_bar_custom_header_tint";
+
+        /**
+         * @hide
+         */
+        public static final String STATUS_BAR_CUSTOM_HEADER_TINT_ALPHA =
+                "status_bar_custom_header_tint_alpha";
+
+        /**
+         * @hide
+         */
+        public static final String STATUS_BAR_CUSTOM_HEADER_TINT_ICONS =
+                "status_bar_custom_header_tint_icons";
+
+        /**
          * Whether to change the transparency of the qs panel
          * @hide
          */
@@ -6017,6 +6035,18 @@ public final class Settings {
         public static final String STATUS_BAR_SHOW_TICKER = "status_bar_show_ticker";
 
         /**
+         * Quick Settings Background Image Blur
+         * @hide
+         */
+        public static final String QS_PANEL_IMAGE_BLUR = "qs_panel_image_blur";
+
+        /**
+         * Quick Settings Background Image Blur Radius
+         * @hide
+         */
+        public static final String QS_PANEL_IMAGE_BLUR_RADIUS = "qs_panel_image_blur_radius";
+
+        /**
          * Ticker animation
          * 0: Fade animation
          * 1: Scrolling ticker
@@ -6097,7 +6127,275 @@ public final class Settings {
          * Quick Settings Background Blur Radius
          * @hide
          */
-        public static final String QS_CUSTOM_BLUR_RADIUS = "qs_custom_blur_image";
+        public static final String QS_CUSTOM_BLUR_RADIUS = "qs_custom_blur_radius";
+
+        /**
+         * Quick Settings Background Blur Radius
+         * @hide
+         */
+        public static final String QS_BLUR_RADIUS = "qs_blur_radius";
+
+        /**
+         * Ambient Image Enabled
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_ENABLED = "ambient_image_enabled";
+
+        /**
+         * Ambient Custom Image 
+         * @hide
+         */
+        public static final String AMBIENT_CUSTOM_IMAGE = "ambient_custom_image";
+
+        /**
+         * Ambient Image Shape Type
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_SHAPE_TYPE = "ambient_image_shape_type";
+
+        /**
+         * Ambient Image Blur
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_BLUR = "ambient_image_blur";
+
+        /**
+         * Ambient Custom Blur Radius 
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_BLUR_RADIUS = "ambient_image_blur_radius";
+
+        /**
+         * Ambient Image Hide Type
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_HIDE_TYPE = "ambient_image_hide_type";
+
+        /**
+         * Ambient Image Show Type
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_SHOW_TYPE = "ambient_image_show_type";
+
+        /**
+         * Ambient Image in QS
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_QS = "ambient_image_qs";
+
+        /**
+         * Ambient Image in AOD
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_AOD = "ambient_image_aod";
+
+        /**
+         * Ambient Image in Lockscreen
+         * @hide
+         */
+        public static final String AMBIENT_IMAGE_LOCKSCREEN = "ambient_image_lockscreen";
+
+        /**
+         * Ambient Text Enabled
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_ENABLED = "ambient_text_enabled";
+
+        /**
+         * Ambient Custom Text
+         * @hide
+         */
+        public static final String AMBIENT_CUSTOM_TEXT = "ambient_custom_text";
+
+        /**
+         * Ambient Text Color Type
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_COLOR_TYPE = "ambient_text_color_type";
+
+        /**
+         * Ambient Text Custom Color Start
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_CUSTOM_COLOR_START = "ambient_text_custom_color_start";
+
+        /**
+         * Ambient Text Custom Color Final
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_CUSTOM_COLOR_FINAL = "ambient_text_custom_color_final";
+
+        /**
+         * Ambient Text Gravity
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_GRAVITY = "ambient_text_gravity";
+
+        /**
+         * Ambient Text Vertical Location
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_VERTICAL_LOCATION = "ambient_text_vertical_location";
+
+        /**
+         * Ambient Text Horizontal Location
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_HORIZONTAL_LOCATION = "ambient_text_horizontal_location";
+
+        /**
+         * Ambient Text Hide Type
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_HIDE_TYPE = "ambient_text_hide_type";
+
+        /**
+         * Ambient Text Show Type
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_SHOW_TYPE = "ambient_text_show_type";
+
+        /**
+         * Ambient Text Rotation
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_ROTATION = "ambient_text_rotation";
+
+        /**
+         * Ambient Text Font
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_FONT = "ambient_text_font";
+
+        /**
+         * Ambient Text Size
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_SIZE = "ambient_text_size";
+
+        /**
+         * Ambient Text Letter Spacing
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_LETTER_SPACING = "ambient_text_letter_spacing";
+
+        /**
+         * Ambient Text Shadow
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_SHADOW_ENABLED = "ambient_text_shadow_enabled";
+
+        public static final String AMBIENT_TEXT_SHADOW_DX = "ambient_text_shadow_dx";
+
+        public static final String AMBIENT_TEXT_SHADOW_DY = "ambient_text_shadow_dy";
+
+        public static final String AMBIENT_TEXT_SHADOW_COLOR = "ambient_text_shadow_color";
+
+        public static final String AMBIENT_TEXT_SHADOW_RADIUS = "ambient_text_shadow_radius";
+
+        /**
+         * Ambient Text Mode
+         * 0 - Disable
+         * 1 - Clock
+         * 2 - Date
+         * 3 - Media Title if is avalible
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_MODE = "ambient_text_mode";
+
+        public static final String AMBIENT_TEXT_MODE_SEQUENCE_TIME = "ambient_text_mode_sequence_time";
+
+        public static final String AMBIENT_TEXT_MODE_SEQUENCE_ANIM = "ambient_text_mode_sequence_anim";
+
+        /**
+         * Ambient Text in QS
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_QS = "ambient_text_qs";
+
+        /**
+         * Ambient Text in AOD
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_AOD = "ambient_text_aod";
+
+        /**
+         * Ambient Text in Lockscreen
+         * @hide
+         */
+        public static final String AMBIENT_TEXT_LOCKSCREEN = "ambient_text_lockscreen";
+
+        /**
+         * Ambient Hide Keyguard
+         * @hide
+         */
+        public static final String AMBIENT_HIDE_KEYGUARD = "ambient_hide_keyguard";
+
+        /**
+         * Center Notification Header
+         * @hide
+         */
+        public static final String CENTER_NOTIFICATION_HEADER = "center_notification_header";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String QS_BRIGHTNESS_BAR_OUT = "qs_brightness_bar_out";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String SYNTH_GESTURES_NOTIFICATION_PANEL = "synth_gestures_notification_panel";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String SYNTH_GESTURES_NOTIFICATION_PANEL_TYPE = "synth_gestures_notification_panel_type";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String SYNTH_GESTURES_OPEN_VOLUME_PANEL = "synth_gestures_open_volume_panel";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String SYNTH_GESTURES_OPEN_VOLUME_PANEL_TYPE = "synth_gestures_open_volume_panel_type";
+
+        /**
+         * QS Brightness Bar Out
+         * @hide
+         */
+        public static final String SYNTH_GESTURES_OPEN_VOLUME_PANEL_VERTICAL_LOCATION = "synth_gestures_open_volume_panel_vertical_location";
+
+        /**
+         * Separators Notification Header
+         * @hide
+         */
+        public static final String SEPARATORS_NOTIFICATION_HEADER = "separators_notification_header";
+
+        /**
+         * Notification Header Gravity
+         * @hide
+         */
+        public static final String NOTIFICATION_HEADER_GRAVITY = "notification_header_gravity";
+
+        /**
+         * Clear All button gravity
+         * @hide
+         */
+        public static final String CLEAR_ALL_BUTTON_GRAVITY = "clear_all_button_gravity";
+
+        /**
+         * Volume Panel Vertical Location
+         * @hide
+         */
+        public static final String VOLUME_PANEL_VERTICAL_LOCATION = "volume_panel_vertical_location";
 
         /**
          * Keys we no longer back up under the current schema, but want to continue to

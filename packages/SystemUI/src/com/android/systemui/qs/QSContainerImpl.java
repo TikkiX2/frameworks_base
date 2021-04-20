@@ -40,6 +40,7 @@ import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
@@ -50,14 +51,22 @@ import android.widget.ImageView;
 import androidx.dynamicanimation.animation.FloatPropertyCompat;
 import androidx.dynamicanimation.animation.SpringForce;
 
+import androidx.core.graphics.ColorUtils;
+import androidx.palette.graphics.Palette;
+
+import com.android.internal.util.ContrastColorUtil;
 import com.android.internal.util.ImageUtils;
 import com.android.settingslib.Utils;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.omni.header.StatusBarHeaderMachine;
+import com.android.systemui.statusbar.notification.MediaNotificationProcessor;
+import com.android.systemui.statusbar.NotificationMediaManager;
 import com.android.systemui.qs.customize.QSCustomizer;
 import com.android.systemui.tuner.TunerService;
 import com.android.systemui.util.animation.PhysicsAnimator;
+
+import com.android.systemui.synth.ExtractColorUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -379,6 +388,7 @@ public class QSContainerImpl extends FrameLayout implements
 
         updateStatusbarVisibility();
         updateBackgroundImage();
+        updateTint();
     }
 
     private void setBackgroundImage() {
@@ -398,14 +408,34 @@ public class QSContainerImpl extends FrameLayout implements
               Settings.System.QS_PANEL_CUSTOM_IMAGE);
         boolean show = Settings.System.getInt(mContext.getContentResolver(),
               Settings.System.QS_PANEL_IMAGE_ENABLED, 0) != 0;
-        if (imageUri != null) {
+        boolean blur = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.QS_PANEL_IMAGE_BLUR, 1) != 0;
+        int blurRadius = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.QS_PANEL_IMAGE_BLUR_RADIUS, 5);
+
+        if (show && imageUri != null) {
             if (mImageURI != imageUri) {
                 mImageURI = imageUri;
                 saveImage(mContext, Uri.parse(imageUri));
                 mOriginalImage = loadImage(mContext);
             }
             if (mOriginalImage != null) {
-                mImage = new BitmapDrawable(mContext.getResources(), ImageUtils.scaleBitmap(mOriginalImage, maxWidth, maxHeight));
+                BitmapDrawable previewImage = new BitmapDrawable(mContext.getResources(), ImageUtils.scaleBitmap(mOriginalImage, maxWidth, maxHeight));
+                if (blur) {
+                    Bitmap imageBlur = Dependency.get(NotificationMediaManager.class).getMediaArtworkProcessor().processArtwork(mContext, previewImage.getBitmap(), blurRadius);
+                    mImage = new BitmapDrawable(mContext.getResources(), imageBlur);
+                } else {
+                    mImage = previewImage;
+                }
+
+                if (show) {
+                    Palette.Builder paletteBuilder = MediaNotificationProcessor.generateArtworkPaletteBuilder(previewImage.getBitmap());
+                    Palette palette = paletteBuilder.generate();
+                    Palette.Swatch backgroundSwatch = MediaNotificationProcessor.findBackgroundSwatch(palette);
+                    int backgroundColor = backgroundSwatch.getRgb();
+                    if (ContrastColorUtil.isColorLight(backgroundColor)) {
+                    }
+                }
                 setBackgroundImage();
                 mQSBackgroundImage.setVisibility(show ? View.VISIBLE : View.GONE);
                 mBackground.setVisibility(show ? View.GONE : View.VISIBLE);
@@ -582,6 +612,30 @@ public class QSContainerImpl extends FrameLayout implements
         applyHeaderBackgroundShadow();
     }
 
+    private void updateTint() {
+        int tint = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.STATUS_BAR_CUSTOM_HEADER_TINT, 1);
+        boolean tintIcons = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.STATUS_BAR_CUSTOM_HEADER_TINT_ICONS, 0) != 0;
+        int alpha = Settings.System.getInt(mContext.getContentResolver(),
+              Settings.System.STATUS_BAR_CUSTOM_HEADER_TINT_ALPHA, 127);
+
+        Drawable image = mBackgroundImage.getDrawable();
+
+        if (image != null) {
+            if (mHeader != null) mHeader.updateColors(mHeaderImageEnabled, tintIcons ? image : null);
+            int backgroundColor = 0;
+            if (tint == 2) {
+                backgroundColor = getAccentColor();
+                mBackgroundImage.setColorFilter(ColorUtils.setAlphaComponent(backgroundColor, alpha));
+            } else if (tint == 1) {
+                mBackgroundImage.setColorFilter(ColorUtils.setAlphaComponent(ExtractColorUtils.extractForegroundColor(image), alpha));
+            } else if (tint == 0) {
+                mBackgroundImage.clearColorFilter();
+            }
+        }
+    }
+
     private void saveImage(Context context, Uri imageUri) {
         try {
             final InputStream imageStream = context.getContentResolver().openInputStream(imageUri);
@@ -615,5 +669,11 @@ public class QSContainerImpl extends FrameLayout implements
             Log.e("QSContainerImpl", "Request image failed ", e);
             return null;
         }
+    }
+
+    int getAccentColor() {
+        final TypedValue value = new TypedValue();
+        mContext.getTheme().resolveAttribute(android.R.attr.colorAccent, value, true);
+        return value.data;
     }
 }

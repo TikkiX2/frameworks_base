@@ -128,8 +128,7 @@ public class PulseControllerImpl
                 mScreenOn = true;
                 doLinkage();
             } else if (PowerManager.ACTION_POWER_SAVE_MODE_CHANGING.equals(intent.getAction())) {
-                mPowerSaveModeEnabled = intent.getBooleanExtra(PowerManager.EXTRA_POWER_SAVE_MODE,
-                        false);
+                mPowerSaveModeEnabled = false;
                 doLinkage();
             } else if (AudioManager.STREAM_MUTE_CHANGED_ACTION.equals(intent.getAction())
                     || (AudioManager.VOLUME_CHANGED_ACTION.equals(intent.getAction()))) {
@@ -344,7 +343,7 @@ public class PulseControllerImpl
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mMusicStreamMuted = isMusicMuted(AudioManager.STREAM_MUSIC);
         PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-        mPowerSaveModeEnabled = pm.isPowerSaveMode();
+        mPowerSaveModeEnabled = false;
 
         mStreamHandler = new VisualizerStreamHandler(mContext, this, mStreamListener, backgroundExecutor);
         mPulseView = new PulseView(context, this);

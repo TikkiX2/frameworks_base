@@ -28,7 +28,9 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.Rect;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -63,8 +65,10 @@ import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
+import androidx.palette.graphics.Palette;
 
 import com.android.internal.logging.UiEventLogger;
+import com.android.internal.util.ImageUtils;
 import com.android.systemui.Dependency;
 import com.android.settingslib.Utils;
 import com.android.systemui.BatteryMeterView;
@@ -85,6 +89,7 @@ import com.android.systemui.qs.QSDetail.Callback;
 import com.android.systemui.qs.carrier.QSCarrierGroup;
 import com.android.systemui.statusbar.BlurUtils;
 import com.android.systemui.statusbar.CommandQueue;
+import com.android.systemui.statusbar.notification.MediaNotificationProcessor;
 import com.android.systemui.statusbar.phone.StatusBarIconController;
 import com.android.systemui.statusbar.phone.StatusBarIconController.TintedIconManager;
 import com.android.systemui.statusbar.phone.StatusBarWindowView;
@@ -95,6 +100,8 @@ import com.android.systemui.statusbar.policy.NextAlarmController;
 import com.android.systemui.statusbar.policy.ZenModeController;
 import com.android.systemui.util.RingerModeTracker;
 import com.android.systemui.tuner.TunerService;
+
+import com.android.systemui.synth.ExtractColorUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -318,6 +325,35 @@ public class QuickStatusBarHeader extends RelativeLayout implements
                 STATUS_BAR_CUSTOM_HEADER);
     }
 
+    public void updateColors(boolean headerEnabled, Drawable imageHeader) {
+        updateColors(headerEnabled, imageHeader != null ? ImageUtils.buildScaledBitmap(imageHeader, imageHeader.getIntrinsicWidth(), imageHeader.getIntrinsicHeight()) : null);
+    }
+
+    public void updateColors(boolean headerEnabled, Bitmap imageHeader) {
+        Rect tintArea = new Rect(0, 0, 0, 0);
+        int colorForeground = Utils.getColorAttrDefaultColor(getContext(),
+                android.R.attr.colorForeground);
+        float intensity = getColorIntensity(colorForeground);
+        int fillColor = mDualToneHandler.getSingleColor(intensity);
+        int fillColorWhite = getContext().getResources().getColor(android.R.color.white);
+
+        mIconManager.setTint(fillColor);
+        applyDarkness(R.id.clock, tintArea, 0, DarkIconDispatcher.DEFAULT_ICON_TINT);
+        mDateView.setTextColor(fillColorWhite);
+        mBatteryRemainingIcon.onDarkChanged(new Rect(), 0, DarkIconDispatcher.DEFAULT_ICON_TINT);
+
+        if (imageHeader != null) {
+            int foregroundColor = ExtractColorUtils.extractForegroundColor(imageHeader);
+
+            if (headerEnabled) {
+                mIconManager.setTint(foregroundColor);
+                applyDarkness(R.id.clock, tintArea, 0, foregroundColor);
+                mDateView.setTextColor(foregroundColor);
+                mBatteryRemainingIcon.updateColors(foregroundColor, ExtractColorUtils.extractBackgroundColor(imageHeader), foregroundColor);
+            }
+        }
+    }
+
     public QuickQSPanel getHeaderQsPanel() {
         return mHeaderQsPanel;
     }
@@ -492,6 +528,7 @@ public class QuickStatusBarHeader extends RelativeLayout implements
     private void updateHeaderTextContainerAlphaAnimator() {
         mHeaderTextContainerAlphaAnimator = new TouchAnimator.Builder()
                 .addFloat(mHeaderTextContainerView, "alpha", 0, 0, mExpandedHeaderAlpha)
+                .addFloat(mHeaderTextContainerView, "translationY", -50, 0, 0)
                 .build();
     }
 
@@ -537,8 +574,10 @@ public class QuickStatusBarHeader extends RelativeLayout implements
 
         if (forceExpanded) {
             if (mBlurUtils.supportsBlursOnWindows()) {
-                mBlurUtils.applyBlur(getViewRootImpl(),
-                        mBlurUtils.blurRadiusOfRatio(expansionFraction));
+                int newBlur = 0;
+                int userBlurRadius = Settings.System.getInt(mContext.getContentResolver(), Settings.System.QS_BLUR_RADIUS, 25);
+                if (userBlurRadius == 0) newBlur = mBlurUtils.blurRadiusOfRatio(expansionFraction); else newBlur = (int) MathUtils.lerp(0f , (float) userBlurRadius, expansionFraction);
+                mBlurUtils.applyBlur(getViewRootImpl(), newBlur);
             }
             // If the keyguard is showing, we want to offset the text so that it comes in at the
             // same time as the panel as it slides down.
